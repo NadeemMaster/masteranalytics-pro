@@ -200,9 +200,10 @@ const styles = StyleSheet.create({
     color: CHART_COLORS.slate500,
   },
 
-  // ---- KPI table on cover ----
+  // ---- KPI table on cover (View-based headers for proper background fill) ----
   kpiTable: {
     flexDirection: "row",
+    width: "100%",
     marginTop: 50,
     borderWidth: 1,
     borderColor: CHART_COLORS.slate200,
@@ -211,28 +212,35 @@ const styles = StyleSheet.create({
   },
   kpiCell: {
     flex: 1,
-    padding: 12,
-    alignItems: "center",
     borderRightWidth: 1,
     borderRightColor: CHART_COLORS.slate200,
   },
-  kpiCellLabel: {
-    fontSize: 8,
-    color: "#ffffff",
+  kpiCellHeader: {
     backgroundColor: CHART_COLORS.blue,
     paddingTop: 8,
     paddingBottom: 8,
-    width: "100%",
+    paddingHorizontal: 4,
+    alignItems: "center",
+  },
+  kpiCellHeaderText: {
+    fontSize: 7,
+    color: "#ffffff",
     textAlign: "center",
     fontFamily: "Inter-SemiBold",
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
+  },
+  kpiCellBody: {
+    paddingTop: 10,
+    paddingBottom: 10,
+    paddingHorizontal: 4,
+    alignItems: "center",
+    backgroundColor: "#ffffff",
   },
   kpiCellValue: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "bold",
     color: CHART_COLORS.slate900,
-    marginTop: 8,
   },
 
   // ---- Headings ----
@@ -463,27 +471,47 @@ function CoverPage({ data, reportDate }: { data: ReportData; reportDate: string 
         </Text>
       </View>
 
-      {/* KPI Summary Table */}
+      {/* KPI Summary Table — View-based headers for proper background rendering */}
       <View style={styles.kpiTable}>
         <View style={styles.kpiCell}>
-          <Text style={styles.kpiCellLabel}>Total Target</Text>
-          <Text style={styles.kpiCellValue}>{fmt(kpis.totalTarget)}</Text>
+          <View style={styles.kpiCellHeader}>
+            <Text style={styles.kpiCellHeaderText}>Total Target</Text>
+          </View>
+          <View style={styles.kpiCellBody}>
+            <Text style={styles.kpiCellValue}>{fmt(kpis.totalTarget)}</Text>
+          </View>
         </View>
         <View style={styles.kpiCell}>
-          <Text style={styles.kpiCellLabel}>OPV Covered</Text>
-          <Text style={styles.kpiCellValue}>{fmt(kpis.opvCovered)}</Text>
+          <View style={styles.kpiCellHeader}>
+            <Text style={styles.kpiCellHeaderText}>OPV Covered</Text>
+          </View>
+          <View style={styles.kpiCellBody}>
+            <Text style={styles.kpiCellValue}>{fmt(kpis.opvCovered)}</Text>
+          </View>
         </View>
         <View style={styles.kpiCell}>
-          <Text style={styles.kpiCellLabel}>Coverage %</Text>
-          <Text style={styles.kpiCellValue}>{fmtPct(coverage, 1)}</Text>
+          <View style={styles.kpiCellHeader}>
+            <Text style={styles.kpiCellHeaderText}>Coverage %</Text>
+          </View>
+          <View style={styles.kpiCellBody}>
+            <Text style={styles.kpiCellValue}>{fmtPct(coverage, 1)}</Text>
+          </View>
         </View>
         <View style={styles.kpiCell}>
-          <Text style={styles.kpiCellLabel}>Missed</Text>
-          <Text style={styles.kpiCellValue}>{fmt(kpis.missedChildren)}</Text>
+          <View style={styles.kpiCellHeader}>
+            <Text style={styles.kpiCellHeaderText}>Missed</Text>
+          </View>
+          <View style={styles.kpiCellBody}>
+            <Text style={styles.kpiCellValue}>{fmt(kpis.missedChildren)}</Text>
+          </View>
         </View>
         <View style={[styles.kpiCell, { borderRightWidth: 0 }]}>
-          <Text style={styles.kpiCellLabel}>Refusals</Text>
-          <Text style={styles.kpiCellValue}>{fmt(kpis.refusals)}</Text>
+          <View style={styles.kpiCellHeader}>
+            <Text style={styles.kpiCellHeaderText}>Refusals</Text>
+          </View>
+          <View style={styles.kpiCellBody}>
+            <Text style={styles.kpiCellValue}>{fmt(kpis.refusals)}</Text>
+          </View>
         </View>
       </View>
     </Page>

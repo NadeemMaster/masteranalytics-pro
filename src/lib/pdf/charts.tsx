@@ -306,19 +306,17 @@ export function UcCoverageChart({
 
 export interface DonutChartProps {
   value: number; // 0-100
-  label: string;
   color?: string;
   size?: number;
 }
 
 export function DonutChart({
   value,
-  label,
   color = CHART_COLORS.blue,
   size = 100,
 }: DonutChartProps) {
   const radius = size / 2;
-  const strokeWidth = size * 0.18;
+  const strokeWidth = size * 0.14;
   const innerRadius = radius - strokeWidth;
 
   // Calculate arc path
@@ -339,21 +337,15 @@ export function DonutChart({
 
   const valueStyle: SvgTextStyle = {
     fontFamily: "Inter",
-    fontSize: Math.round(size * 0.16),
+    fontSize: Math.round(size * 0.18),
     fontWeight: "bold",
     fill: CHART_COLORS.slate900,
     textAnchor: "middle",
   };
-  const labelStyle: SvgTextStyle = {
-    fontFamily: "Inter",
-    fontSize: 9,
-    fill: CHART_COLORS.slate500,
-    textAnchor: "middle",
-  };
 
   return (
-    <Svg width={size} height={size + 20}>
-      {/* Background circle */}
+    <Svg width={size} height={size}>
+      {/* Background circle (track) */}
       <Circle
         cx={radius}
         cy={radius}
@@ -375,10 +367,6 @@ export function DonutChart({
       {/* Center text */}
       <Text x={radius} y={radius + 4} style={valueStyle}>
         {value.toFixed(1)}%
-      </Text>
-      {/* Label */}
-      <Text x={radius} y={size + 14} style={labelStyle}>
-        {label}
       </Text>
     </Svg>
   );
@@ -402,19 +390,44 @@ export function KpiSummaryChart({
   missed,
   refusalRate,
 }: KpiSummaryChartProps) {
-  const donutSize = 90;
+  const donutSize = 110;
 
   const coveredPct =
     covered + missed > 0 ? (covered / (covered + missed)) * 100 : 0;
 
-  // Use a View wrapper (not Svg) so each DonutChart is an independent SVG.
-  // Nested <Svg> inside <Svg> is not supported by @react-pdf/renderer.
+  // Card-based layout: each donut in its own card with label + count below.
   const kpiSummaryStyles = StyleSheet.create({
     container: {
       flexDirection: "row",
       justifyContent: "center",
-      alignItems: "flex-start",
-      gap: 20,
+      alignItems: "stretch",
+      gap: 12,
+    },
+    card: {
+      flex: 1,
+      alignItems: "center",
+      paddingVertical: 14,
+      paddingHorizontal: 8,
+      borderWidth: 1,
+      borderColor: CHART_COLORS.slate200,
+      borderRadius: 8,
+      backgroundColor: "#ffffff",
+    },
+    cardLabel: {
+      fontFamily: "Inter-SemiBold",
+      fontSize: 9,
+      color: CHART_COLORS.slate700,
+      textAlign: "center",
+      marginBottom: 8,
+      textTransform: "uppercase",
+      letterSpacing: 0.3,
+    },
+    cardCount: {
+      fontFamily: "Inter",
+      fontSize: 8,
+      color: CHART_COLORS.slate500,
+      textAlign: "center",
+      marginTop: 6,
     },
     title: {
       fontFamily: "Inter",
@@ -422,32 +435,54 @@ export function KpiSummaryChart({
       fontWeight: "bold",
       color: CHART_COLORS.slate900,
       textAlign: "center",
-      marginBottom: 8,
+      marginBottom: 12,
     },
   });
+
+  const fmtCompact = (n: number) => {
+    if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
+    return String(n);
+  };
 
   return (
     <View>
       <Text style={kpiSummaryStyles.title}>Campaign KPI Summary</Text>
       <View style={kpiSummaryStyles.container}>
-        <DonutChart
-          value={coveragePct}
-          label="Coverage %"
-          color={CHART_COLORS.blue}
-          size={donutSize}
-        />
-        <DonutChart
-          value={coveredPct}
-          label="Covered vs Missed"
-          color={CHART_COLORS.green}
-          size={donutSize}
-        />
-        <DonutChart
-          value={Math.min(refusalRate, 100)}
-          label="Refusal Rate %"
-          color={CHART_COLORS.red}
-          size={donutSize}
-        />
+        <View style={kpiSummaryStyles.card}>
+          <Text style={kpiSummaryStyles.cardLabel}>Coverage</Text>
+          <DonutChart
+            value={coveragePct}
+            color={CHART_COLORS.blue}
+            size={donutSize}
+          />
+          <Text style={kpiSummaryStyles.cardCount}>
+            {fmtCompact(covered)} / {fmtCompact(covered + missed)} children
+          </Text>
+        </View>
+
+        <View style={kpiSummaryStyles.card}>
+          <Text style={kpiSummaryStyles.cardLabel}>Covered vs Missed</Text>
+          <DonutChart
+            value={coveredPct}
+            color={CHART_COLORS.green}
+            size={donutSize}
+          />
+          <Text style={kpiSummaryStyles.cardCount}>
+            {fmtCompact(missed)} missed
+          </Text>
+        </View>
+
+        <View style={kpiSummaryStyles.card}>
+          <Text style={kpiSummaryStyles.cardLabel}>Refusal Rate</Text>
+          <DonutChart
+            value={Math.min(refusalRate, 100)}
+            color={CHART_COLORS.red}
+            size={donutSize}
+          />
+          <Text style={kpiSummaryStyles.cardCount}>
+            {refusalRate.toFixed(2)}% of target
+          </Text>
+        </View>
       </View>
     </View>
   );
