@@ -56,3 +56,46 @@ Stage Summary:
 - Generated columns + helper views reduce aggregation logic needed in Step 6.
 - User asked about Vercel hosting + file access — explained in chat (git push → Vercel import; files at /home/z/my-project/, downloads at /home/z/my-project/download/).
 - Awaiting user confirmation to proceed to Step 3 (Supabase client utilities).
+
+---
+Task ID: 3
+Agent: main (Super Z)
+Task: Step 3 — Generate Supabase client utility files (browser, server, middleware, types)
+
+Work Log:
+- Created `src/types/database.ts` with full TypeScript types matching `supabase/schema.sql`:
+  * `DailyCampaignRow` (50+ typed fields), `DailyCampaignInsert`, `DailyCampaignUpdate`
+  * `CatchupCampaignRow` (40+ typed fields), `CatchupCampaignInsert`, `CatchupCampaignUpdate`
+  * `Database` interface for Supabase generic typing (Tables + Views: v_daily_latest, v_uc_summary + Functions)
+  * `SupabaseClient` type alias for `SupabaseClient<Database>`
+- Created `src/lib/supabase/client.ts` — browser client via `createBrowserClient` from @supabase/ssr:
+  * Singleton pattern (avoids re-creating on every render)
+  * PKCE auth flow, persistSession, autoRefreshToken, detectSessionInUrl
+  * Throws clear error if NEXT_PUBLIC env vars missing
+- Created `src/lib/supabase/server.ts` — server client via `createServerClient`:
+  * Uses `cookies()` from next/headers (async in Next.js 15 — caller must `await createClient()`)
+  * `setAll` wrapped in try/catch (Server Components can't set cookies — middleware handles refresh)
+  * Added `getUser()` and `requireUser()` convenience helpers (requireUser redirects to /login if unauthenticated)
+- Created `src/lib/supabase/middleware.ts` — `updateSession()` helper:
+  * Refreshes auth session on every request (writes updated cookies)
+  * Uses `getUser()` (not `getSession()`) for security — validates against server
+  * Protects routes: /dashboard, /upload, /reports, /settings → redirect to /login?redirect=... if unauthenticated
+  * Redirects authenticated users away from /login and /signup → /dashboard
+- Created `src/middleware.ts` — Next.js middleware entry point:
+  * Delegates to `updateSession()`
+  * Matcher excludes static assets, image files, and CSS/JS
+- Created `src/lib/env.ts` — env var validation:
+  * `env` object with validated values (throws at startup if NEXT_PUBLIC vars missing or still placeholder)
+  * `isConfigured` boolean flag for conditional UI banners
+- Fixed TypeScript implicit-any errors in `setAll` callbacks by importing `CookieOptions` from @supabase/ssr and adding explicit `CookieSetItem[]` param types.
+- Verified: `bun run lint` → ✔ No ESLint warnings or errors; `bunx tsc --noEmit` → exit 0.
+- Updated `src/app/page.tsx` progress tracker (Step 3 marked complete).
+- Refreshed `download/masteranalytics-pro.zip` (86 KB) with all Step 3 files.
+- Committed: "Step 3: Supabase client utilities (browser, server, middleware, types, env guard)".
+
+Stage Summary:
+- Type-safe Supabase layer complete — all queries now get autocomplete on table/column names via `Database` generic.
+- Browser client (singleton) + server client (async) + middleware (session refresh + route guard) follow the official @supabase/ssr pattern for Next.js App Router.
+- RLS-friendly: server client reads the user's cookies so RLS policies (`auth.uid() = user_id`) apply to all queries automatically.
+- Route protection active: unauthenticated users can't reach /dashboard; authenticated users skip /login.
+- Awaiting user confirmation to proceed to Step 4 (Authentication UI + Auth callback route).
