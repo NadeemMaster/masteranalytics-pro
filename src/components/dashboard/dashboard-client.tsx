@@ -29,23 +29,10 @@ import {
 import { CampaignComparison } from "@/components/dashboard/campaign-comparison";
 import { AiInsightsCard } from "@/components/dashboard/ai-insights";
 import { PdfReportButton } from "@/components/dashboard/pdf-report-button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { EditableTable } from "@/components/dashboard/editable-table";
+import { ChatWidget } from "@/components/dashboard/chat-widget";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { formatNumber } from "@/lib/utils";
 import type {
   DashboardData,
   FilterOptions,
@@ -104,6 +91,12 @@ export function DashboardClient({
     },
     [fetchFilters]
   );
+
+  // Called by <EditableTable /> after a successful row update so the
+  // dashboard KPIs / charts reflect the new database values.
+  const handleDataUpdated = useCallback(() => {
+    void fetchFilters(filters);
+  }, [fetchFilters, filters]);
 
   const activeFilterCount =
     (filters.campaign ? 1 : 0) +
@@ -209,75 +202,15 @@ export function DashboardClient({
         </div>
       ) : null}
 
-      {/* Raw rows table */}
+      {/* Editable data table (Excel-like layout with per-row edit/save) */}
       {!pending ? (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Raw Rows (latest 100)</CardTitle>
-              <Badge variant="secondary">{data.rows.length} rows</Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {data.rows.length === 0 ? (
-              <div className="py-8 text-center text-sm text-slate-500">
-                No rows match the current filters.
-              </div>
-            ) : (
-              <div className="max-h-96 overflow-y-auto">
-                <Table>
-                  <TableHeader className="sticky top-0 bg-white">
-                    <TableRow>
-                      <TableHead>Tehsil</TableHead>
-                      <TableHead>UC</TableHead>
-                      <TableHead className="text-center">Day</TableHead>
-                      <TableHead className="text-right">Target</TableHead>
-                      <TableHead className="text-right">OPV</TableHead>
-                      <TableHead className="text-right">Missed</TableHead>
-                      <TableHead className="text-right">Refusals</TableHead>
-                      <TableHead className="text-right">Teams</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.rows.map((row, i) => (
-                      <TableRow key={`${row.tehsil}-${row.uc}-${row.campaign_day}-${i}`}>
-                        <TableCell className="font-medium text-slate-700">
-                          {row.tehsil}
-                        </TableCell>
-                        <TableCell className="text-slate-600">
-                          {row.uc}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge
-                            variant={row.campaign_day === 4 ? "warning" : "outline"}
-                            className="font-mono text-[10px]"
-                          >
-                            D{row.campaign_day}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums text-slate-600">
-                          {formatNumber(row.over_all_target)}
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums font-medium text-slate-800">
-                          {formatNumber(row.opv_given)}
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums text-amber-700">
-                          {formatNumber(row.missed_na_0_59)}
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums text-red-600">
-                          {formatNumber(row.total_refusal)}
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums text-slate-600">
-                          {formatNumber(row.teams_reported)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <EditableTable
+          campaign={filters.campaign || undefined}
+          tehsil={filters.tehsil || undefined}
+          uc={filters.uc || undefined}
+          day={filters.day}
+          onDataUpdated={handleDataUpdated}
+        />
       ) : null}
 
       {/* Campaign Comparison */}
@@ -288,6 +221,15 @@ export function DashboardClient({
         Signed in as <span className="font-medium text-slate-500">{email}</span> —
         dashboard data is scoped to your account via Supabase RLS.
       </p>
+
+      {/* Floating AI Chatbot */}
+      <ChatWidget
+        campaign={filters.campaign || undefined}
+        tehsil={filters.tehsil || undefined}
+        uc={filters.uc || undefined}
+        day={filters.day}
+        userName={email}
+      />
     </div>
   );
 }
