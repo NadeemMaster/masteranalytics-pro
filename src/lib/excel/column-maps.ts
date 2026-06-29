@@ -48,7 +48,8 @@ export const DAILY_COLUMN_MAP: Record<string, string> = {
 
   // OPV / Finger markers
   offingermarkersissued: "finger_markers",
-  opvgiven: "opv_given",
+  opvgiven: "opv_issued",
+  opvissued: "opv_issued", // alias — "OPV Issued" header (renamed from "OPV Given")
   opvused: "opv_used",
   opvreturned: "opv_returned",
   totalcapsulesgivenredblue: "total_capsules_given",
@@ -120,7 +121,8 @@ export const CATCHUP_COLUMN_MAP: Record<string, string> = {
   persistentlymissedchildrenpmcrecorded: "pmc_recorded",
 
   // OPV
-  opvgiven: "opv_given",
+  opvgiven: "opv_issued",
+  opvissued: "opv_issued", // alias — "OPV Issued" header (renamed from "OPV Given")
   opvused: "opv_used",
   opvreturned: "opv_returned",
 

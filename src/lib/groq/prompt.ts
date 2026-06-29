@@ -11,7 +11,8 @@ export interface InsightDataContext {
   day?: number | "all";
   kpis: {
     totalTarget: number;
-    opvCovered: number;
+    opvIssued: number;
+    adminCoverage: number;
     coveragePct: number;
     missedChildren: number;
     refusals: number;
@@ -21,7 +22,8 @@ export interface InsightDataContext {
     uc_name: string;
     tehsil: string;
     over_all_target: number;
-    opv_given: number;
+    opv_issued: number;
+    admin_coverage: number;
     coverage_pct: number;
     missed_children: number;
     refusals: number;
@@ -29,7 +31,7 @@ export interface InsightDataContext {
   }>;
   dayBreakdown?: Array<{
     day: number;
-    opv_given: number;
+    opv_issued: number;
     missed_children: number;
     refusals: number;
   }>;
@@ -105,8 +107,9 @@ export function buildUserPrompt(ctx: InsightDataContext): string {
   // KPIs
   lines.push("## Key Performance Indicators (Aggregated)");
   lines.push(`- Total Target (children 0-59): ${ctx.kpis.totalTarget.toLocaleString()}`);
-  lines.push(`- OPV Covered: ${ctx.kpis.opvCovered.toLocaleString()}`);
-  lines.push(`- Coverage %: ${ctx.kpis.coveragePct.toFixed(2)}%`);
+  lines.push(`- OPV Issued: ${ctx.kpis.opvIssued.toLocaleString()}`);
+  lines.push(`- Admin Coverage: ${ctx.kpis.adminCoverage.toLocaleString()}`);
+  lines.push(`- Admin Coverage %: ${ctx.kpis.coveragePct.toFixed(2)}%`);
   lines.push(`- Missed Children: ${ctx.kpis.missedChildren.toLocaleString()}`);
   lines.push(`- Total Refusals: ${ctx.kpis.refusals.toLocaleString()}`);
   lines.push(`- Teams Reported: ${ctx.kpis.teamsReported.toLocaleString()}`);
@@ -115,11 +118,11 @@ export function buildUserPrompt(ctx: InsightDataContext): string {
   // Day breakdown
   if (ctx.dayBreakdown && ctx.dayBreakdown.length > 0) {
     lines.push("## Day-by-Day Breakdown");
-    lines.push("| Day | OPV Given | Missed Children | Refusals |");
+    lines.push("| Day | OPV Issued | Missed Children | Refusals |");
     lines.push("|-----|-----------|-----------------|----------|");
     for (const d of ctx.dayBreakdown) {
       lines.push(
-        `| Day ${d.day} | ${d.opv_given.toLocaleString()} | ${d.missed_children.toLocaleString()} | ${d.refusals.toLocaleString()} |`
+        `| Day ${d.day} | ${d.opv_issued.toLocaleString()} | ${d.missed_children.toLocaleString()} | ${d.refusals.toLocaleString()} |`
       );
     }
     lines.push("");
@@ -127,11 +130,11 @@ export function buildUserPrompt(ctx: InsightDataContext): string {
 
   // UC breakdown
   lines.push("## UC-wise Breakdown");
-  lines.push("| UC Name | Tehsil | Target | OPV Given | Coverage % | Missed | Refusals | Teams |");
+  lines.push("| UC Name | Tehsil | Target | OPV Issued | Admin Coverage % | Missed | Refusals | Teams |");
   lines.push("|---------|--------|--------|-----------|------------|--------|-----------|-------|");
   for (const uc of ctx.ucBreakdown) {
     lines.push(
-      `| ${uc.uc_name} | ${uc.tehsil} | ${uc.over_all_target.toLocaleString()} | ${uc.opv_given.toLocaleString()} | ${uc.coverage_pct.toFixed(1)}% | ${uc.missed_children.toLocaleString()} | ${uc.refusals.toLocaleString()} | ${uc.teams_reported} |`
+      `| ${uc.uc_name} | ${uc.tehsil} | ${uc.over_all_target.toLocaleString()} | ${uc.opv_issued.toLocaleString()} | ${uc.coverage_pct.toFixed(1)}% | ${uc.missed_children.toLocaleString()} | ${uc.refusals.toLocaleString()} | ${uc.teams_reported} |`
     );
   }
   lines.push("");

@@ -168,19 +168,19 @@ export function KpiCards({ kpis }: KpiCardsProps) {
       />
       <KpiCard
         icon={Syringe}
-        label="OPV Covered"
-        value={kpis.opvCovered}
+        label="OPV Issued"
+        value={kpis.opvIssued}
         tone="cyan"
-        hint="Vaccinated (OPV)"
+        hint="Vaccine issued (wastage/utilization)"
       />
       <KpiCard
         icon={Percent}
-        label="Coverage %"
+        label="Admin Coverage %"
         value={coverage}
         display={`${coverage.toFixed(1)}%`}
         tone={coverageTone}
         progress={coverage}
-        hint="OPV / Target × 100"
+        hint="Admin coverage / Target × 100"
       />
       <KpiCard
         icon={AlertTriangle}

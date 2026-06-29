@@ -58,7 +58,8 @@ export async function GET(request: NextRequest) {
     campaign_day: number;
     over_all_target: number;
     teams_reported: number;
-    opv_given: number;
+    opv_issued: number;
+    admin_coverage: number;
     missed_na_0_59: number;
     missed_ref_0_59: number;
     total_refusal: number;
@@ -85,7 +86,7 @@ export async function GET(request: NextRequest) {
   let dailyQuery = supabase
     .from("daily_campaign_data")
     .select(
-      "tehsil, uc_name, campaign_day, over_all_target, teams_reported, opv_given, missed_na_0_59, missed_ref_0_59, total_refusal, medical_refusal, soft_refusal, admin_coverage_pct"
+      "tehsil, uc_name, campaign_day, over_all_target, teams_reported, opv_issued, admin_coverage, missed_na_0_59, missed_ref_0_59, total_refusal, medical_refusal, soft_refusal, admin_coverage_pct"
     )
     .eq("user_id", user.id)
     .eq("campaign_name", campaignName);
@@ -139,7 +140,8 @@ export async function GET(request: NextRequest) {
   // ---- 4. Aggregate KPIs ----
   const kpis = {
     totalTarget: dailyData.reduce((s, r) => s + (r.over_all_target || 0), 0),
-    opvCovered: dailyData.reduce((s, r) => s + (r.opv_given || 0), 0),
+    opvIssued: dailyData.reduce((s, r) => s + (r.opv_issued || 0), 0),
+    adminCoverage: dailyData.reduce((s, r) => s + (r.admin_coverage || 0), 0),
     coveragePct: 0, // computed below
     missedChildren: dailyData.reduce(
       (s, r) => s + (r.missed_na_0_59 || 0) + (r.missed_ref_0_59 || 0),
@@ -149,7 +151,7 @@ export async function GET(request: NextRequest) {
     teamsReported: dailyData.reduce((s, r) => s + (r.teams_reported || 0), 0),
   };
   kpis.coveragePct =
-    kpis.totalTarget > 0 ? (kpis.opvCovered / kpis.totalTarget) * 100 : 0;
+    kpis.totalTarget > 0 ? (kpis.adminCoverage / kpis.totalTarget) * 100 : 0;
 
   // ---- 5. Build UC breakdown ----
   const ucMap = new Map<
@@ -158,7 +160,8 @@ export async function GET(request: NextRequest) {
       uc_name: string;
       tehsil: string;
       over_all_target: number;
-      opv_given: number;
+      opv_issued: number;
+      admin_coverage: number;
       missed_children: number;
       refusals: number;
       teams_reported: number;
@@ -171,7 +174,8 @@ export async function GET(request: NextRequest) {
       uc_name: r.uc_name,
       tehsil: r.tehsil,
       over_all_target: 0,
-      opv_given: 0,
+      opv_issued: 0,
+      admin_coverage: 0,
       missed_children: 0,
       refusals: 0,
       teams_reported: 0,
@@ -180,7 +184,8 @@ export async function GET(request: NextRequest) {
     // Since upsert replaces, each UC has only ONE row (the latest day).
     // So we can safely take the values as-is.
     existing.over_all_target = r.over_all_target || 0;
-    existing.opv_given = r.opv_given || 0;
+    existing.opv_issued = r.opv_issued || 0;
+    existing.admin_coverage = r.admin_coverage || 0;
     existing.missed_children =
       (r.missed_na_0_59 || 0) + (r.missed_ref_0_59 || 0);
     existing.refusals = r.total_refusal || 0;
@@ -191,17 +196,17 @@ export async function GET(request: NextRequest) {
   const ucBreakdown = Array.from(ucMap.values()).map((uc) => ({
     ...uc,
     coverage_pct:
-      uc.over_all_target > 0 ? (uc.opv_given / uc.over_all_target) * 100 : 0,
+      uc.over_all_target > 0 ? (uc.admin_coverage / uc.over_all_target) * 100 : 0,
   }));
 
   // ---- 6. Build day breakdown (if "all" days) ----
   let dayBreakdown: InsightDataContext["dayBreakdown"] = [];
   if (day === "all") {
-    const dayMap = new Map<number, { opv_given: number; missed_children: number; refusals: number }>();
+    const dayMap = new Map<number, { opv_issued: number; missed_children: number; refusals: number }>();
     for (const r of dailyData) {
       const d = r.campaign_day;
-      const existing = dayMap.get(d) || { opv_given: 0, missed_children: 0, refusals: 0 };
-      existing.opv_given += r.opv_given || 0;
+      const existing = dayMap.get(d) || { opv_issued: 0, missed_children: 0, refusals: 0 };
+      existing.opv_issued += r.opv_issued || 0;
       existing.missed_children += (r.missed_na_0_59 || 0) + (r.missed_ref_0_59 || 0);
       existing.refusals += r.total_refusal || 0;
       dayMap.set(d, existing);
@@ -214,11 +219,11 @@ export async function GET(request: NextRequest) {
     if (catchupData && catchupData.length > 0) {
       const day4Totals = catchupData.reduce(
         (acc, r) => ({
-          opv_given: acc.opv_given + (r.total_coverage || 0),
+          opv_issued: acc.opv_issued + (r.total_coverage || 0),
           missed_children: acc.missed_children + (r.still_missed || 0),
           refusals: acc.refusals + (r.total_refusal || 0),
         }),
-        { opv_given: 0, missed_children: 0, refusals: 0 }
+        { opv_issued: 0, missed_children: 0, refusals: 0 }
       );
       dayBreakdown.push({ day: 4, ...day4Totals });
     }

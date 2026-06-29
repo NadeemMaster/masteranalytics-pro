@@ -54,7 +54,7 @@ export interface DailyCampaignRow {
 
   // OPV / Finger markers
   finger_markers: number;
-  opv_given: number;
+  opv_issued: number;
   opv_used: number;
   opv_returned: number;
   total_capsules_given: number;
@@ -134,7 +134,7 @@ export type DailyCampaignInsert = {
   vaccinated_fix_site?: number;
   vaccinated_transit?: number;
   finger_markers?: number;
-  opv_given?: number;
+  opv_issued?: number;
   opv_used?: number;
   opv_returned?: number;
   total_capsules_given?: number;
@@ -203,7 +203,7 @@ export interface CatchupCampaignRow {
   pmc_recorded: number;
 
   // OPV
-  opv_given: number;
+  opv_issued: number;
   opv_used: number;
   opv_returned: number;
 
@@ -272,7 +272,7 @@ export type CatchupCampaignInsert = {
   unrecorded_vaccinated?: number;
   mmp_covered_catchup?: number;
   pmc_recorded?: number;
-  opv_given?: number;
+  opv_issued?: number;
   opv_used?: number;
   opv_returned?: number;
   afp_reported?: number;
@@ -341,7 +341,7 @@ export interface Database {
           teams_reported: number;
           houses_planned: number;
           houses_visited: number;
-          opv_given: number;
+          opv_issued: number;
           missed_na_0_59: number;
           total_refusal: number;
           admin_coverage_pct: number;
@@ -360,7 +360,7 @@ export interface Database {
           latest_day: number;
           over_all_target: number;
           teams_reported: number;
-          opv_given: number;
+          opv_issued: number;
           missed_na_0_59: number;
           total_refusal: number;
           admin_coverage_pct: number;

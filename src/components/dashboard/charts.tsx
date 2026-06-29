@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 // ============================================================================
 //  MasterAnalytics Pro — Dashboard Charts (Recharts)
@@ -104,7 +104,7 @@ export function DayByDayChart({ data }: DayByDayChartProps) {
           <div>
             <CardTitle className="text-base">Day-by-Day Progress</CardTitle>
             <CardDescription>
-              OPV coverage, missed children &amp; refusals across campaign days
+              OPV issued, missed children &amp; refusals across campaign days
             </CardDescription>
           </div>
           <Badge variant="info">4 days</Badge>
@@ -140,7 +140,7 @@ export function DayByDayChart({ data }: DayByDayChartProps) {
                 cursor={{ fill: "rgba(148,163,184,0.08)" }}
               />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="opv" name="OPV Covered" fill={CHART.c1} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="opv" name="OPV Issued" fill={CHART.c1} radius={[4, 4, 0, 0]} />
               <Bar dataKey="missed" name="Missed" fill={CHART.c3} radius={[4, 4, 0, 0]} />
               <Bar dataKey="refusals" name="Refusals" fill={CHART.c5} radius={[4, 4, 0, 0]} />
             </BarChart>
@@ -182,7 +182,7 @@ export function UcCoverageChart({ data, limit = 10 }: UcCoverageChartProps) {
       <CardHeader>
         <div className="flex items-center justify-between gap-2">
           <div>
-            <CardTitle className="text-base">UC-wise Coverage %</CardTitle>
+            <CardTitle className="text-base">UC-wise Admin Coverage %</CardTitle>
             <CardDescription>
               Bottom {limit} UCs by coverage (lowest first)
             </CardDescription>
@@ -272,9 +272,9 @@ export function CoverageVsTargetChart({ data, limit = 10 }: CoverageVsTargetChar
       <CardHeader>
         <div className="flex items-center justify-between gap-2">
           <div>
-            <CardTitle className="text-base">Coverage vs Target (top UCs)</CardTitle>
+            <CardTitle className="text-base">Admin Coverage vs Target (top UCs)</CardTitle>
             <CardDescription>
-              Target vs OPV with coverage % overlay
+              Target vs OPV with admin coverage % overlay
             </CardDescription>
           </div>
           <Badge variant="info">Top {limit}</Badge>
@@ -338,7 +338,7 @@ export function CoverageVsTargetChart({ data, limit = 10 }: CoverageVsTargetChar
                 yAxisId="left"
                 type="monotone"
                 dataKey="opv"
-                name="OPV Covered"
+                name="OPV Issued"
                 stroke={CHART.c1}
                 fill="url(#opvGradient)"
                 strokeWidth={2}
@@ -347,7 +347,7 @@ export function CoverageVsTargetChart({ data, limit = 10 }: CoverageVsTargetChar
                 yAxisId="right"
                 type="monotone"
                 dataKey="coverage"
-                name="Coverage %"
+                name="Admin Coverage %"
                 stroke={CHART.c4}
                 strokeWidth={2}
                 dot={{ r: 3, fill: CHART.c4 }}

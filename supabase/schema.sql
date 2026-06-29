@@ -64,7 +64,7 @@ create table public.daily_campaign_data (
 
     -- OPV / Finger markers ------------------------------------------------
     finger_markers      integer not null default 0,
-    opv_given           integer not null default 0,
+    opv_issued          integer not null default 0,
     opv_used            integer not null default 0,
     opv_returned        integer not null default 0,
     total_capsules_given  integer not null default 0,
@@ -166,7 +166,7 @@ create table public.catchup_campaign_data (
     pmc_recorded            integer not null default 0,
 
     -- OPV -----------------------------------------------------------------
-    opv_given           integer not null default 0,
+    opv_issued          integer not null default 0,
     opv_used            integer not null default 0,
     opv_returned        integer not null default 0,
 
@@ -330,7 +330,7 @@ create or replace view public.v_daily_latest as
 select distinct on (user_id, campaign_name, tehsil, uc_name)
        user_id, campaign_name, tehsil, uc_name,
        campaign_day, over_all_target, teams_reported,
-       houses_planned, houses_visited, opv_given,
+       houses_planned, houses_visited, opv_issued,
        missed_na_0_59, total_refusal, admin_coverage_pct,
        hh_coverage_pct, created_at, updated_at
 from public.daily_campaign_data
@@ -342,7 +342,7 @@ select d.user_id, d.campaign_name, d.tehsil, d.uc_name,
        max(d.campaign_day) as latest_day,
        d.over_all_target,
        d.teams_reported,
-       d.opv_given,
+       d.opv_issued,
        d.missed_na_0_59,
        d.total_refusal,
        d.admin_coverage_pct,
@@ -357,7 +357,7 @@ left join public.catchup_campaign_data c
       and c.tehsil = d.tehsil
       and c.uc_name = d.uc_name
 group by d.user_id, d.campaign_name, d.tehsil, d.uc_name,
-         d.over_all_target, d.teams_reported, d.opv_given,
+         d.over_all_target, d.teams_reported, d.opv_issued,
          d.missed_na_0_59, d.total_refusal, d.admin_coverage_pct,
          c.target_missed_total, c.covered_missed_total,
          c.total_coverage, c.still_missed;

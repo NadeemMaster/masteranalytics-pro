@@ -47,7 +47,7 @@ type SvgTextStyle = {
 export interface DayBarChartProps {
   data: Array<{
     day: number;
-    opv_given: number;
+    opv_issued: number;
     missed_children: number;
     refusals: number;
   }>;
@@ -63,7 +63,7 @@ export function DayBarChart({ data, width = 500, height = 220 }: DayBarChartProp
   const chartH = height - padding.top - padding.bottom;
 
   const maxValue = Math.max(
-    ...data.flatMap((d) => [d.opv_given, d.missed_children, d.refusals]),
+    ...data.flatMap((d) => [d.opv_issued, d.missed_children, d.refusals]),
     1
   );
 
@@ -129,9 +129,9 @@ export function DayBarChart({ data, width = 500, height = 220 }: DayBarChartProp
           <G key={`bar-${i}`}>
             <Rect
               x={groupX}
-              y={padding.top + chartH - yScale(d.opv_given)}
+              y={padding.top + chartH - yScale(d.opv_issued)}
               width={barWidth}
-              height={yScale(d.opv_given)}
+              height={yScale(d.opv_issued)}
               fill={CHART_COLORS.blue}
             />
             <Rect
@@ -162,7 +162,7 @@ export function DayBarChart({ data, width = 500, height = 220 }: DayBarChartProp
       {/* Legend */}
       <Rect x={padding.left} y={height - 12} width={8} height={8} fill={CHART_COLORS.blue} />
       <Text x={padding.left + 11} y={height - 5} style={legendStyle}>
-        OPV Given
+        OPV Issued
       </Text>
       <Rect x={padding.left + 75} y={height - 12} width={8} height={8} fill={CHART_COLORS.amber} />
       <Text x={padding.left + 86} y={height - 5} style={legendStyle}>

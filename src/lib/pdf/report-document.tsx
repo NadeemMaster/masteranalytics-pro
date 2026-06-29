@@ -84,7 +84,8 @@ export interface ReportData {
   };
   kpis: {
     totalTarget: number;
-    opvCovered: number;
+    opvIssued: number;
+    adminCoverage: number;
     coveragePct: number;
     missedChildren: number;
     refusals: number;
@@ -94,7 +95,8 @@ export interface ReportData {
     uc_name: string;
     tehsil: string;
     over_all_target: number;
-    opv_given: number;
+    opv_issued: number;
+    admin_coverage: number;
     coverage_pct: number;
     missed_children: number;
     refusals: number;
@@ -102,7 +104,7 @@ export interface ReportData {
   }>;
   dayBreakdown: Array<{
     day: number;
-    opv_given: number;
+    opv_issued: number;
     missed_children: number;
     refusals: number;
   }>;
@@ -442,15 +444,15 @@ function CoverPage({ data, reportDate }: { data: ReportData; reportDate: string 
         </View>
         <View style={styles.kpiCell}>
           <View style={styles.kpiCellHeader}>
-            <Text style={styles.kpiCellHeaderText}>OPV Covered</Text>
+            <Text style={styles.kpiCellHeaderText}>OPV Issued</Text>
           </View>
           <View style={styles.kpiCellBody}>
-            <Text style={styles.kpiCellValue}>{fmt(kpis.opvCovered)}</Text>
+            <Text style={styles.kpiCellValue}>{fmt(kpis.opvIssued)}</Text>
           </View>
         </View>
         <View style={styles.kpiCell}>
           <View style={styles.kpiCellHeader}>
-            <Text style={styles.kpiCellHeaderText}>Coverage %</Text>
+            <Text style={styles.kpiCellHeaderText}>Admin Coverage %</Text>
           </View>
           <View style={styles.kpiCellBody}>
             <Text style={styles.kpiCellValue}>{fmtPct(coverage, 1)}</Text>
@@ -618,14 +620,16 @@ export function ReportDocument({ data }: { data: ReportData }) {
 
         <Text style={styles.h2}>1.1 Key Metrics</Text>
         <Text style={styles.body}>
-          The analysis focuses on six primary Key Performance Indicators
-          (KPIs): Total Target (children aged 0-59 months), OPV Covered
-          (children vaccinated with Oral Polio Vaccine), Coverage Percentage
-          (OPV Covered / Total Target), Missed Children (children recorded as
-          not present or refused), Total Refusals (households or families
-          declining vaccination), and Teams Reported (vaccination teams
-          deployed). For this campaign, the total target population was{" "}
-          {fmt(kpis.totalTarget)} children, with {fmt(kpis.opvCovered)}{" "}
+          The analysis focuses on seven primary Key Performance Indicators
+          (KPIs): Total Target (children aged 0-59 months), OPV Issued
+          (vaccine vials issued for wastage/utilization tracking), Admin
+          Coverage (children vaccinated with Oral Polio Vaccine), Coverage
+          Percentage (Admin Coverage / Total Target), Missed Children
+          (children recorded as not present or refused), Total Refusals
+          (households or families declining vaccination), and Teams Reported
+          (vaccination teams deployed). For this campaign, the total target
+          population was{" "}
+          {fmt(kpis.totalTarget)} children, with {fmt(kpis.adminCoverage)}{" "}
           receiving OPV, resulting in an overall coverage of{" "}
           {fmtPct(coverage)}.
         </Text>
@@ -682,7 +686,7 @@ export function ReportDocument({ data }: { data: ReportData }) {
         ================================================================ */}
         <Text style={styles.h1}>3. Core Performance Analysis</Text>
         <Text style={styles.body}>
-          The campaign achieved an OPV coverage of {fmt(kpis.opvCovered)}{" "}
+          The campaign achieved an admin coverage of {fmt(kpis.adminCoverage)}{" "}
           children out of a target population of {fmt(kpis.totalTarget)},
           representing a coverage rate of {fmtPct(coverage)}. A total of{" "}
           {fmt(kpis.missedChildren)} children were recorded as missed (not
@@ -695,7 +699,7 @@ export function ReportDocument({ data }: { data: ReportData }) {
         <View style={styles.chartContainer}>
           <KpiSummaryChart
             coveragePct={coverage}
-            covered={kpis.opvCovered}
+            covered={kpis.adminCoverage}
             missed={kpis.missedChildren}
             refusalRate={refusalRate}
           />
@@ -712,7 +716,7 @@ export function ReportDocument({ data }: { data: ReportData }) {
               <DayBarChart data={dayBreakdown} width={450} height={220} />
             </View>
             <Text style={styles.caption}>
-              Figure 2: Day-by-Day Campaign Progress - OPV Given, Missed
+              Figure 2: Day-by-Day Campaign Progress - OPV Issued, Missed
               Children, and Refusals
             </Text>
           </>
@@ -721,7 +725,8 @@ export function ReportDocument({ data }: { data: ReportData }) {
         <Text style={styles.h2}>3.1 Key Metric Highlights</Text>
         {[
           `Total Target: ${fmt(kpis.totalTarget)} children (0-59 months)`,
-          `OPV Covered: ${fmt(kpis.opvCovered)} children vaccinated`,
+          `OPV Issued: ${fmt(kpis.opvIssued)} (vaccine wastage/utilization)`,
+          `Admin Coverage: ${fmt(kpis.adminCoverage)} children vaccinated`,
           `Coverage Rate: ${fmtPct(coverage)} (target: 95%)`,
           `Missed Children: ${fmt(kpis.missedChildren)} (including NA and refusal categories)`,
           `Total Refusals: ${fmt(kpis.refusals)} (medical + soft refusals)`,
@@ -769,24 +774,24 @@ export function ReportDocument({ data }: { data: ReportData }) {
             <>
               <Text style={styles.h3}>Top 5 Performing UCs</Text>
               <DataTable
-                headers={["UC Name", "Tehsil", "Target", "OPV", "Coverage %"]}
+                headers={["UC Name", "Tehsil", "Target", "OPV", "Admin Coverage %"]}
                 rows={top5.map((uc) => [
                   uc.uc_name.slice(0, 22),
                   uc.tehsil.slice(0, 14),
                   fmt(uc.over_all_target),
-                  fmt(uc.opv_given),
+                  fmt(uc.opv_issued),
                   fmtPct(uc.coverage_pct, 1),
                 ])}
               />
 
               <Text style={styles.h3}>Bottom 5 UCs (Priority)</Text>
               <DataTable
-                headers={["UC Name", "Tehsil", "Target", "OPV", "Coverage %"]}
+                headers={["UC Name", "Tehsil", "Target", "OPV", "Admin Coverage %"]}
                 rows={bottom5.map((uc) => [
                   uc.uc_name.slice(0, 22),
                   uc.tehsil.slice(0, 14),
                   fmt(uc.over_all_target),
-                  fmt(uc.opv_given),
+                  fmt(uc.opv_issued),
                   fmtPct(uc.coverage_pct, 1),
                 ])}
               />

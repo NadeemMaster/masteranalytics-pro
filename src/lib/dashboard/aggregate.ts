@@ -30,8 +30,9 @@ export interface DashboardFilters {
 
 export interface DashboardKpis {
   totalTarget: number;
-  opvCovered: number;
-  coveragePct: number; // 0-100
+  opvIssued: number;
+  adminCoverage: number;
+  coveragePct: number; // 0-100 (admin coverage against target)
   missedChildren: number;
   refusals: number;
   teamsReported: number;
@@ -49,8 +50,9 @@ export interface UcBreakdownRow {
   uc: string;
   tehsil: string;
   opv: number;
+  adminCoverage: number;
   target: number;
-  coveragePct: number; // 0-100
+  coveragePct: number; // 0-100 (admin coverage against target)
   missed: number;
   refusals: number;
   day: number;
@@ -61,7 +63,7 @@ export interface DashboardRow {
   uc: string;
   campaign_day: number;
   over_all_target: number;
-  opv_given: number;
+  opv_issued: number;
   missed_na_0_59: number;
   total_refusal: number;
   teams_reported: number;
@@ -91,7 +93,8 @@ interface DailyRow {
   uc_name: string;
   campaign_day: number;
   over_all_target: number;
-  opv_given: number;
+  opv_issued: number;
+  admin_coverage: number;
   missed_na_0_59: number;
   total_refusal: number;
   teams_reported: number;
@@ -102,7 +105,7 @@ interface CatchupRow {
   tehsil: string;
   uc_name: string;
   campaign_day: number;
-  opv_given: number;
+  opv_issued: number;
   total_coverage: number;
   still_missed: number;
   total_refusal: number;
@@ -113,10 +116,10 @@ interface CatchupRow {
 // ---------------------------------------------------------------------------
 
 const DAILY_COLUMNS =
-  "campaign_name, tehsil, uc_name, campaign_day, over_all_target, opv_given, missed_na_0_59, total_refusal, teams_reported";
+  "campaign_name, tehsil, uc_name, campaign_day, over_all_target, opv_issued, admin_coverage, missed_na_0_59, total_refusal, teams_reported";
 
 const CATCHUP_COLUMNS =
-  "campaign_name, tehsil, uc_name, campaign_day, opv_given, total_coverage, still_missed, total_refusal";
+  "campaign_name, tehsil, uc_name, campaign_day, opv_issued, total_coverage, still_missed, total_refusal";
 
 function safePct(numerator: number, denominator: number): number {
   if (!denominator || denominator <= 0) return 0;
@@ -250,29 +253,32 @@ export async function fetchDashboardData(
 
   // ---- KPI aggregation ----
   let totalTarget = 0;
-  let opvCovered = 0;
+  let opvIssued = 0;
+  let adminCoverage = 0;
   let missedChildren = 0;
   let refusals = 0;
   let teamsReported = 0;
 
   for (const r of dailyRows) {
     totalTarget += r.over_all_target ?? 0;
-    opvCovered += r.opv_given ?? 0;
+    opvIssued += r.opv_issued ?? 0;
+    adminCoverage += r.admin_coverage ?? 0;
     missedChildren += r.missed_na_0_59 ?? 0;
     refusals += r.total_refusal ?? 0;
     teamsReported += r.teams_reported ?? 0;
   }
   for (const r of catchupRows) {
-    opvCovered += r.opv_given ?? 0;
+    opvIssued += r.opv_issued ?? 0;
     missedChildren += r.still_missed ?? 0;
     refusals += r.total_refusal ?? 0;
   }
 
-  const coveragePct = safePct(opvCovered, totalTarget);
+  const coveragePct = safePct(adminCoverage, totalTarget);
 
   const kpis: DashboardKpis = {
     totalTarget,
-    opvCovered,
+    opvIssued,
+    adminCoverage,
     coveragePct,
     missedChildren,
     refusals,
@@ -288,7 +294,7 @@ export async function fetchDashboardData(
   for (const r of dailyRows) {
     const entry = dayMap.get(r.campaign_day);
     if (!entry) continue;
-    entry.opv += r.opv_given ?? 0;
+    entry.opv += r.opv_issued ?? 0;
     entry.missed += r.missed_na_0_59 ?? 0;
     entry.refusals += r.total_refusal ?? 0;
     entry.target += r.over_all_target ?? 0;
@@ -296,7 +302,7 @@ export async function fetchDashboardData(
   for (const r of catchupRows) {
     const entry = dayMap.get(4);
     if (!entry) continue;
-    entry.opv += r.opv_given ?? 0;
+    entry.opv += r.opv_issued ?? 0;
     entry.missed += r.still_missed ?? 0;
     entry.refusals += r.total_refusal ?? 0;
   }
@@ -315,6 +321,7 @@ export async function fetchDashboardData(
         uc: r.uc_name,
         tehsil: r.tehsil,
         opv: 0,
+        adminCoverage: 0,
         target: 0,
         coveragePct: 0,
         missed: 0,
@@ -323,7 +330,8 @@ export async function fetchDashboardData(
       };
       ucMap.set(k, entry);
     }
-    entry.opv += r.opv_given ?? 0;
+    entry.opv += r.opv_issued ?? 0;
+    entry.adminCoverage += r.admin_coverage ?? 0;
     entry.target += r.over_all_target ?? 0;
     entry.missed += r.missed_na_0_59 ?? 0;
     entry.refusals += r.total_refusal ?? 0;
@@ -337,6 +345,7 @@ export async function fetchDashboardData(
         uc: r.uc_name,
         tehsil: r.tehsil,
         opv: 0,
+        adminCoverage: 0,
         target: 0,
         coveragePct: 0,
         missed: 0,
@@ -345,14 +354,14 @@ export async function fetchDashboardData(
       };
       ucMap.set(k, entry);
     }
-    entry.opv += r.opv_given ?? 0;
+    entry.opv += r.opv_issued ?? 0;
     entry.missed += r.still_missed ?? 0;
     entry.refusals += r.total_refusal ?? 0;
     entry.day = 4; // catchup overrides latest day
   }
 
   for (const entry of ucMap.values()) {
-    entry.coveragePct = safePct(entry.opv, entry.target);
+    entry.coveragePct = safePct(entry.adminCoverage, entry.target);
   }
 
   const ucBreakdown = Array.from(ucMap.values()).sort(
@@ -366,7 +375,7 @@ export async function fetchDashboardData(
       uc: r.uc_name,
       campaign_day: r.campaign_day,
       over_all_target: r.over_all_target ?? 0,
-      opv_given: r.opv_given ?? 0,
+      opv_issued: r.opv_issued ?? 0,
       missed_na_0_59: r.missed_na_0_59 ?? 0,
       total_refusal: r.total_refusal ?? 0,
       teams_reported: r.teams_reported ?? 0,
@@ -376,7 +385,7 @@ export async function fetchDashboardData(
       uc: r.uc_name,
       campaign_day: 4,
       over_all_target: 0,
-      opv_given: r.opv_given ?? 0,
+      opv_issued: r.opv_issued ?? 0,
       missed_na_0_59: r.still_missed ?? 0,
       total_refusal: r.total_refusal ?? 0,
       teams_reported: 0,

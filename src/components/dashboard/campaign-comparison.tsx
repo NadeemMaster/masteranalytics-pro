@@ -3,7 +3,7 @@
 // ============================================================================
 //  MasterAnalytics Pro — Campaign Comparison
 //  Side-by-side comparison of two campaigns (current vs previous).
-//  Shows: Total Target, OPV Given, Coverage %, Missed Children, Refusals,
+//  Shows: Total Target, OPV Issued, Admin Coverage %, Missed Children, Refusals,
 //  Teams Reported — each with variance & variance %.
 //
 //  Author: M. Nadeem Akhtar (https://www.facebook.com/itxmasterjee)
@@ -68,14 +68,14 @@ function buildMetricRows(current: DashboardKpis, previous: DashboardKpis): Metri
       higherIsBetter: false, // smaller target = fewer children to reach (good)
     },
     {
-      label: "OPV Given",
-      current: current.opvCovered,
-      previous: previous.opvCovered,
+      label: "OPV Issued",
+      current: current.opvIssued,
+      previous: previous.opvIssued,
       format: "number",
       higherIsBetter: true,
     },
     {
-      label: "Coverage %",
+      label: "Admin Coverage %",
       current: current.coveragePct,
       previous: previous.coveragePct,
       format: "percent",

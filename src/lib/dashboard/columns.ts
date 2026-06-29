@@ -64,7 +64,7 @@ export const DAILY_COLUMNS: ColumnDef[] = [
 
   // ---- OPV / Finger markers ----
   { key: "finger_markers", label: "Finger Markers", type: "number", group: "OPV & Markers", editable: true },
-  { key: "opv_given", label: "OPV Given", type: "number", group: "OPV & Markers", editable: true },
+  { key: "opv_issued", label: "OPV Issued", type: "number", group: "OPV & Markers", editable: true },
   { key: "opv_used", label: "OPV Used", type: "number", group: "OPV & Markers", editable: true },
   { key: "opv_returned", label: "OPV Returned", type: "number", group: "OPV & Markers", editable: true },
   { key: "total_capsules_given", label: "Capsules Given", type: "number", group: "OPV & Markers", editable: true },
@@ -136,7 +136,7 @@ export const CATCHUP_COLUMNS: ColumnDef[] = [
   { key: "pmc_recorded", label: "PMC Recorded", type: "number", group: "Vaccination", editable: true },
 
   // ---- OPV ----
-  { key: "opv_given", label: "OPV Given", type: "number", group: "OPV", editable: true },
+  { key: "opv_issued", label: "OPV Issued", type: "number", group: "OPV", editable: true },
   { key: "opv_used", label: "OPV Used", type: "number", group: "OPV", editable: true },
   { key: "opv_returned", label: "OPV Returned", type: "number", group: "OPV", editable: true },
 

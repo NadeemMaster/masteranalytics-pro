@@ -88,13 +88,13 @@ function buildDataContext(
   // Summarize daily rows as a compact table
   if (dailyRows.length > 0) {
     lines.push("## Daily Campaign Data (Days 1-3)");
-    lines.push("| Tehsil | UC | Day | Target | OPV Given | Missed NA | Refusals | Teams |");
+    lines.push("| Tehsil | UC | Day | Target | OPV Issued | Missed NA | Refusals | Teams |");
     lines.push("|---------|-----|-----|--------|-----------|-----------|-----------|-------|");
     const limit = Math.min(dailyRows.length, 50);
     for (let i = 0; i < limit; i++) {
       const r = dailyRows[i];
       lines.push(
-        `| ${r.tehsil ?? ""} | ${r.uc_name ?? ""} | ${r.campaign_day ?? ""} | ${r.over_all_target ?? 0} | ${r.opv_given ?? 0} | ${r.missed_na_0_59 ?? 0} | ${r.total_refusal ?? 0} | ${r.teams_reported ?? 0} |`
+        `| ${r.tehsil ?? ""} | ${r.uc_name ?? ""} | ${r.campaign_day ?? ""} | ${r.over_all_target ?? 0} | ${r.opv_issued ?? 0} | ${r.missed_na_0_59 ?? 0} | ${r.total_refusal ?? 0} | ${r.teams_reported ?? 0} |`
       );
     }
     if (dailyRows.length > limit) {
@@ -104,15 +104,16 @@ function buildDataContext(
 
     // Aggregate KPIs
     const totalTarget = sumField(dailyRows, "over_all_target");
-    const totalOpv = sumField(dailyRows, "opv_given");
+    const totalOpv = sumField(dailyRows, "opv_issued");
+    const totalAdminCoverage = sumField(dailyRows, "admin_coverage");
     const totalMissed = sumField(dailyRows, "missed_na_0_59");
     const totalRefusals = sumField(dailyRows, "total_refusal");
     const totalTeams = sumField(dailyRows, "teams_reported");
-    const coveragePct = totalTarget > 0 ? ((totalOpv / totalTarget) * 100).toFixed(1) : "0";
+    const coveragePct = totalTarget > 0 ? ((totalAdminCoverage / totalTarget) * 100).toFixed(1) : "0";
 
     lines.push("## Daily Aggregated KPIs");
     lines.push(`- Total Target: ${totalTarget.toLocaleString()}`);
-    lines.push(`- Total OPV Given: ${totalOpv.toLocaleString()}`);
+    lines.push(`- Total OPV Issued: ${totalOpv.toLocaleString()}`);
     lines.push(`- Coverage: ${coveragePct}%`);
     lines.push(`- Total Missed (NA 0-59): ${totalMissed.toLocaleString()}`);
     lines.push(`- Total Refusals: ${totalRefusals.toLocaleString()}`);
@@ -198,7 +199,7 @@ export async function POST(request: NextRequest) {
     let dailyQuery = supabase
       .from("daily_campaign_data")
       .select(
-        "tehsil, uc_name, campaign_day, over_all_target, opv_given, missed_na_0_59, total_refusal, teams_reported"
+        "tehsil, uc_name, campaign_day, over_all_target, opv_issued, admin_coverage, missed_na_0_59, total_refusal, teams_reported"
       )
       .eq("user_id", user.id)
       .eq("campaign_name", campaign)
