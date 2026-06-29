@@ -10,7 +10,7 @@ export default function Home() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-600" />
             </span>
-            Step 4 Complete — Authentication Ready
+            Step 5 Complete — Upload &amp; Excel Parser Ready
           </div>
 
           <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
@@ -71,8 +71,9 @@ export default function Home() {
                 <span className="text-green-600">✓</span> Step 4 — Authentication
                 UI &amp; callback
               </li>
-              <li className="flex items-center gap-2 opacity-60">
-                <span>○</span> Step 5 — File Upload + /api/upload
+              <li className="flex items-center gap-2">
+                <span className="text-green-600">✓</span> Step 5 — File Upload +
+                /api/upload
               </li>
               <li className="flex items-center gap-2 opacity-60">
                 <span>○</span> Step 6 — Dashboard UI + charts

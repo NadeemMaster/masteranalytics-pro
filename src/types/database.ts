@@ -103,13 +103,71 @@ export interface DailyCampaignRow {
   updated_at: string;
 }
 
-// Row shape accepted on insert (omits server-managed fields)
-export type DailyCampaignInsert = Omit<
-  DailyCampaignRow,
-  | "id"
-  | "created_at"
-  | "updated_at"
-> & { id?: string };
+// Row shape accepted on insert.
+// Fields with DB defaults (DEFAULT 0 / DEFAULT now()) are optional here,
+// matching the Supabase Insert convention.
+export type DailyCampaignInsert = {
+  id?: string;
+  user_id: string;
+  campaign_name: string;
+  campaign_day: 1 | 2 | 3;
+  tehsil: string;
+  uc_name: string;
+  over_all_target?: number;
+  teams_reported?: number;
+  houses_planned?: number;
+  houses_visited?: number;
+  target_hh_0_59?: number;
+  first_visit_hh_0_59?: number;
+  zero_zero_houses?: number;
+  locked_houses?: number;
+  vita_6_11?: number;
+  vita_12_59?: number;
+  missed_na_0_59?: number;
+  missed_ref_0_59?: number;
+  missed_covered_na?: number;
+  missed_covered_ref?: number;
+  vaccinated_school?: number;
+  guest_vaccinated?: number;
+  vaccinated_streets?: number;
+  mmp_vaccinated?: number;
+  vaccinated_fix_site?: number;
+  vaccinated_transit?: number;
+  finger_markers?: number;
+  opv_given?: number;
+  opv_used?: number;
+  opv_returned?: number;
+  total_capsules_given?: number;
+  total_capsules_used?: number;
+  total_capsules_return?: number;
+  afp_reported?: number;
+  zero_dose_recorded?: number;
+  admin_coverage?: number;
+  admin_coverage_pct?: number;
+  same_day_missed_pct?: number;
+  vaccine_utilization?: number;
+  hh_coverage?: number;
+  hh_coverage_pct?: number;
+  covered_na_smc_prev?: number;
+  round2_pmc?: number;
+  round3_pmc?: number;
+  total_refusal?: number;
+  medical_refusal?: number;
+  soft_refusal?: number;
+  mmp_registration?: number;
+  mmp_covered_existing?: number;
+  mmp_missed_existing?: number;
+  mmp_newly_arrived_covered?: number;
+  shifted_mmp?: number;
+  still_missed_in_uc?: number;
+  still_missed_out_uc_tehsil?: number;
+  still_missed_out_tehsil_district?: number;
+  still_missed_out_district?: number;
+  still_missed_out_province?: number;
+  raw_data?: Json | null;
+  created_at?: string;
+  updated_at?: string;
+};
 
 // Row shape accepted on update
 export type DailyCampaignUpdate = Partial<DailyCampaignInsert>;
@@ -196,14 +254,56 @@ export interface CatchupCampaignRow {
   updated_at: string;
 }
 
-export type CatchupCampaignInsert = Omit<
-  CatchupCampaignRow,
-  | "id"
-  | "created_at"
-  | "updated_at"
-  | "target_missed_total"
-  | "covered_missed_total"
-> & { id?: string };
+export type CatchupCampaignInsert = {
+  id?: string;
+  user_id: string;
+  campaign_name: string;
+  campaign_day?: 4; // has DEFAULT 4
+  tehsil: string;
+  uc_name: string;
+  target_missed_na?: number;
+  target_missed_ref?: number;
+  covered_missed_na?: number;
+  covered_missed_ref?: number;
+  // target_missed_total & covered_missed_total are GENERATED — never insert
+  zero_zero_houses?: number;
+  locked_houses?: number;
+  guest_vaccinated?: number;
+  unrecorded_vaccinated?: number;
+  mmp_covered_catchup?: number;
+  pmc_recorded?: number;
+  opv_given?: number;
+  opv_used?: number;
+  opv_returned?: number;
+  afp_reported?: number;
+  zero_dose_recorded?: number;
+  vita_blue_given?: number;
+  vita_red_given?: number;
+  vaccinated_fix_site?: number;
+  vaccinated_transit?: number;
+  total_coverage?: number;
+  total_coverage_pct?: number;
+  still_missed?: number;
+  covered_na_smc_prev?: number;
+  round2_pmc?: number;
+  round3_pmc?: number;
+  total_refusal?: number;
+  medical_refusal?: number;
+  soft_refusal?: number;
+  mmp_registration?: number;
+  mmp_covered_existing?: number;
+  mmp_missed_existing?: number;
+  mmp_newly_arrived_covered?: number;
+  shifted_mmp?: number;
+  still_missed_in_uc?: number;
+  still_missed_out_uc_tehsil?: number;
+  still_missed_out_tehsil_district?: number;
+  still_missed_out_district?: number;
+  still_missed_out_province?: number;
+  raw_data?: Json | null;
+  created_at?: string;
+  updated_at?: string;
+};
 
 export type CatchupCampaignUpdate = Partial<CatchupCampaignInsert>;
 

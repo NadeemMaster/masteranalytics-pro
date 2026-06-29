@@ -9,6 +9,7 @@ import { Activity, Upload, BarChart3, Sparkles, FileText } from "lucide-react";
 import { requireUser } from "@/lib/supabase/server";
 import { UserMenu } from "@/components/user-menu";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -27,25 +28,29 @@ export default async function DashboardPage() {
       icon: Upload,
       label: "Step 5 — Upload",
       desc: "Excel parser + /api/upload route",
-      status: "pending",
+      status: "done",
+      href: "/upload",
     },
     {
       icon: BarChart3,
       label: "Step 6 — Dashboard",
       desc: "Filters, KPI cards, Recharts",
       status: "pending",
+      href: null,
     },
     {
       icon: Sparkles,
       label: "Step 7 — AI Insights",
       desc: "Groq LLaMA-3 analysis",
       status: "pending",
+      href: null,
     },
     {
       icon: FileText,
       label: "Step 8 — PDF Report",
       desc: "A4 report with bookmarks",
       status: "pending",
+      href: null,
     },
   ];
 
@@ -87,15 +92,30 @@ export default async function DashboardPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((s) => {
             const Icon = s.icon;
+            const isDone = s.status === "done";
             return (
               <Card key={s.label} className="overflow-hidden">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                    <span
+                      className={cn(
+                        "flex h-9 w-9 items-center justify-center rounded-lg",
+                        isDone
+                          ? "bg-green-50 text-green-600"
+                          : "bg-blue-50 text-blue-600"
+                      )}
+                    >
                       <Icon className="h-4 w-4" />
                     </span>
-                    <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
-                      Pending
+                    <span
+                      className={cn(
+                        "rounded-full px-2 py-0.5 text-xs font-medium",
+                        isDone
+                          ? "bg-green-50 text-green-700"
+                          : "bg-amber-50 text-amber-700"
+                      )}
+                    >
+                      {isDone ? "Ready" : "Pending"}
                     </span>
                   </div>
                   <CardTitle className="mt-3 text-sm">{s.label}</CardTitle>
@@ -113,20 +133,22 @@ export default async function DashboardPage() {
           <CardContent className="flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="font-semibold text-slate-900">
-                Ready to upload your first campaign report?
+                Upload your campaign reports
               </h3>
               <p className="mt-1 text-sm text-slate-600">
-                The upload UI + Excel parser will be built in Step 5 (next).
-                Grab your{" "}
+                The Excel parser is ready — upload your Day 1-4{" "}
                 <code className="rounded bg-white px-1.5 py-0.5 text-xs">
                   .xlsx
                 </code>{" "}
-                Day 1-4 files now.
+                files. Days 1-3 are cumulative (latest replaces previous), Day 4
+                goes to the catch-up table.
               </p>
             </div>
-            <Button disabled className="shrink-0">
-              <Upload className="h-4 w-4" />
-              Upload (coming soon)
+            <Button asChild className="shrink-0">
+              <Link href="/upload">
+                <Upload className="h-4 w-4" />
+                Upload Excel
+              </Link>
             </Button>
           </CardContent>
         </Card>
