@@ -99,3 +99,58 @@ Stage Summary:
 - RLS-friendly: server client reads the user's cookies so RLS policies (`auth.uid() = user_id`) apply to all queries automatically.
 - Route protection active: unauthenticated users can't reach /dashboard; authenticated users skip /login.
 - Awaiting user confirmation to proceed to Step 4 (Authentication UI + Auth callback route).
+
+---
+Task ID: 4
+Agent: main (Super Z)
+Task: Step 4 — Create Authentication UI (login/signup) + Auth callback route + logout
+
+Work Log:
+- Created 3 new shadcn UI primitives: `separator.tsx`, `dropdown-menu.tsx` (full menu suite), `avatar.tsx`.
+- Created `src/components/ui/password-input.tsx`:
+  * `PasswordInput` component with show/hide toggle (Eye / EyeOff icons)
+  * `evaluatePasswordStrength()` + `PasswordStrengthBar` — 4-segment strength meter (Too short/Weak/Fair/Good/Strong)
+- Created `/login` route (Server Component shell + Client Component form):
+  * `src/app/login/page.tsx` — branded shell with MasterAnalytics Pro logo, RLS trust banner, Suspense wrapper for `useSearchParams`
+  * `src/app/login/login-form.tsx` — email/password sign-in via Supabase browser client
+    - Friendly error mapping (invalid credentials, email not confirmed, rate limit)
+    - Reads `?redirect=` param (validated to relative path) for post-login navigation
+    - Reads `?error=auth_callback|config` to surface auth-callback / config errors as toasts
+    - `router.push + router.refresh` to force middleware + Server Components to pick up new session
+    - Loading state, disabled inputs, Sonner toasts
+- Created `/signup` route (Server Component shell + Client Component form):
+  * `src/app/signup/page.tsx` — same branded shell
+  * `src/app/signup/signup-form.tsx` — email/password + confirm password
+    - Email regex validation, min 8 chars password, password match check, inline strength bar
+    - Maps "already registered" / "password too weak" / "rate limit" errors
+    - Two-path success: auto-sign-in (email confirmation OFF) → /dashboard, or "check your email" state (email confirmation ON)
+- Created `/auth/callback` route (`src/app/auth/callback/route.ts`):
+  * Handles PKCE email-confirmation redirect from Supabase
+  * Reads `code` param, exchanges for session via `supabase.auth.exchangeCodeForSession(code)`
+  * Builds redirect response FIRST so Supabase writes session cookies to the response
+  * Validates `next` param to relative path (prevents open-redirect)
+  * Error path → redirects to /login?error=auth_callback
+- Created `src/app/actions.ts` — `logout` Server Action:
+  * `supabase.auth.signOut()` + `revalidatePath('/', 'layout')` + `redirect('/login')`
+- Created `src/components/user-menu.tsx`:
+  * Avatar dropdown for dashboard header — shows email initials, signed-in-as label, "Sign out" item (calls logout action via useTransition)
+  * Disabled "Profile" item placeholder
+- Created `/dashboard` placeholder page (`src/app/dashboard/page.tsx`):
+  * Calls `requireUser()` (redirects to /login if not signed in)
+  * Renders branded header with UserMenu
+  * Welcome banner + Step 5/6/7/8 status grid + "ready to upload" CTA
+  * This page will be replaced by the full dashboard in Step 6
+- Fixed lint/type issues: empty interface → type alias (password-input), removed unused `searchParams` from LoginPage (deferred to client form via useSearchParams), added `CookieSetItem[]` param type to auth callback `setAll`.
+- Verified: `bun run lint` → ✔ No ESLint warnings or errors; `bunx tsc --noEmit` → exit 0.
+- Refreshed `download/masteranalytics-pro.zip` (104 KB) with all Step 4 files.
+- Committed: "Step 4: Authentication UI (login/signup) + auth callback + logout + UserMenu + dashboard placeholder".
+
+Stage Summary:
+- Complete auth flow: signup → email confirmation (if enabled) → /auth/callback → session set → /dashboard.
+- Login flow: credentials → session → /dashboard (or original ?redirect path).
+- Logout: Server Action clears session + redirects to /login.
+- Middleware (Step 3) protects /dashboard, /upload, /reports, /settings — unauthenticated → /login?redirect=...; authenticated user on /login|/signup → /dashboard.
+- All auth errors mapped to friendly Sonner toasts.
+- Password strength meter + show/hide toggle for better UX.
+- /dashboard placeholder ensures post-login redirect doesn't 404 — will be replaced by full dashboard in Step 6.
+- Next: Step 5 — File Upload UI + /api/upload route with `*`/empty/NA → 0 cleaning logic + cumulative Day 1-3 upsert (Day 2 replaces Day 1 for same UC).
