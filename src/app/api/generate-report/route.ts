@@ -1,28 +1,17 @@
 // ============================================================================
-//  MasterAnalytics Pro — /api/generate-report Route Handler
-//  Fetches filtered campaign data + AI insights, invokes the Python report
-//  generator (reportlab), and returns the PDF download path.
+//  MasterAnalytics Pro — /api/generate-report Route Handler (Vercel-compatible)
+//  Fetches filtered campaign data + AI insights, generates PDF using
+//  @react-pdf/renderer (pure JS, no Python).
 //
-//  Spec compliance (Data Analysis Report Prompt):
-//    - Library: reportlab (Python)
-//    - Page: A4, margins 2.5cm/2cm
-//    - Header: report title, right-aligned, 10pt (excluded on cover)
-//    - Footer: page number centered (excluded on cover)
-//    - Bookmarks: auto-generated from Heading 1/2/3
-//    - Images: >=150 DPI, aspect ratio locked, width <=80% page
-//    - File size: <=10MB
-//    - 7 sections: Scope, Data Quality, Core Performance, Comparisons,
-//                  Attribution, Insights & Action Plan, Uncertainty
-//    - File naming: [主题]_分析报告_[YYYY-MM-DD].pdf
+//  This is the Vercel-compatible version — no Python subprocess, no
+//  reportlab/matplotlib. Everything runs in the Node.js serverless function.
 //
 //  Author: M. Nadeem Akhtar (https://www.facebook.com/itxmasterjee)
 // ============================================================================
 
 import { NextResponse, type NextRequest } from "next/server";
-import { spawn } from "child_process";
-import { writeFile, readFile, unlink } from "fs/promises";
-import { join } from "path";
-import { tmpdir } from "os";
+import React from "react";
+import { renderToBuffer } from "@react-pdf/renderer";
 
 import { createClient, getUser } from "@/lib/supabase/server";
 import { getGroqClient, getGroqModel } from "@/lib/groq/client";
@@ -32,17 +21,11 @@ import {
   parseInsightResponse,
   type InsightDataContext,
 } from "@/lib/groq/prompt";
+import { ReportDocument, type ReportData } from "@/lib/pdf/report-document";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 60; // 60 seconds — Python + Groq may take time
-
-const REPORT_SCRIPT = join(
-  process.cwd(),
-  "scripts",
-  "report",
-  "generate_report.py"
-);
+export const maxDuration = 60;
 
 export async function GET(request: NextRequest) {
   // ---- 1. Authenticate ----
@@ -64,7 +47,7 @@ export async function GET(request: NextRequest) {
     dayParam && ["1", "2", "3", "4"].includes(dayParam)
       ? parseInt(dayParam, 10)
       : "all";
-  const includeAI = searchParams.get("ai") !== "false"; // default true
+  const includeAI = searchParams.get("ai") !== "false";
 
   if (!campaignName) {
     return NextResponse.json(
@@ -73,7 +56,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // ---- 3. Fetch data from Supabase (same logic as /api/ai-insights) ----
+  // ---- 3. Fetch data from Supabase ----
   const supabase = await createClient();
 
   type DailyRow = {
@@ -163,15 +146,18 @@ export async function GET(request: NextRequest) {
     kpis.totalTarget > 0 ? (kpis.opvCovered / kpis.totalTarget) * 100 : 0;
 
   // ---- 5. Build UC breakdown ----
-  const ucMap = new Map<string, {
-    uc_name: string;
-    tehsil: string;
-    over_all_target: number;
-    opv_given: number;
-    missed_children: number;
-    refusals: number;
-    teams_reported: number;
-  }>();
+  const ucMap = new Map<
+    string,
+    {
+      uc_name: string;
+      tehsil: string;
+      over_all_target: number;
+      opv_given: number;
+      missed_children: number;
+      refusals: number;
+      teams_reported: number;
+    }
+  >();
 
   for (const r of dailyData) {
     const key = `${r.tehsil}|||${r.uc_name}`;
@@ -201,12 +187,20 @@ export async function GET(request: NextRequest) {
   // ---- 6. Build day breakdown ----
   let dayBreakdown: InsightDataContext["dayBreakdown"] = [];
   if (day === "all") {
-    const dayMap = new Map<number, { opv_given: number; missed_children: number; refusals: number }>();
+    const dayMap = new Map<
+      number,
+      { opv_given: number; missed_children: number; refusals: number }
+    >();
     for (const r of dailyData) {
       const d = r.campaign_day;
-      const existing = dayMap.get(d) || { opv_given: 0, missed_children: 0, refusals: 0 };
+      const existing = dayMap.get(d) || {
+        opv_given: 0,
+        missed_children: 0,
+        refusals: 0,
+      };
       existing.opv_given += r.opv_given || 0;
-      existing.missed_children += (r.missed_na_0_59 || 0) + (r.missed_ref_0_59 || 0);
+      existing.missed_children +=
+        (r.missed_na_0_59 || 0) + (r.missed_ref_0_59 || 0);
       existing.refusals += r.total_refusal || 0;
       dayMap.set(d, existing);
     }
@@ -259,96 +253,61 @@ export async function GET(request: NextRequest) {
       insights = parseInsightResponse(aiContent);
     } catch (err) {
       console.error("[generate-report] AI insights failed (non-fatal):", err);
-      // Continue without AI insights — the report will note they're unavailable
     }
   }
 
-  // ---- 8. Prepare data for Python script ----
-  const reportData = {
+  // ---- 8. Build report data ----
+  const reportData: ReportData = {
     campaign: campaignName,
     filters: { tehsil, ucName, day },
     kpis,
     ucBreakdown,
     dayBreakdown,
     insights,
+    generatedAt: new Date().toISOString(),
   };
 
-  // Write data to a temp JSON file
-  const tmpFile = join(tmpdir(), `report-data-${Date.now()}.json`);
-  await writeFile(tmpFile, JSON.stringify(reportData), "utf-8");
-
-  // ---- 9. Invoke Python script ----
+  // ---- 9. Render PDF using @react-pdf/renderer ----
   try {
-    const result = await new Promise<string>((resolve, reject) => {
-      const proc = spawn("python3", [REPORT_SCRIPT], {
-        stdio: ["pipe", "pipe", "pipe"],
-        cwd: process.cwd(),
-      });
+    // Cast to any to work around @react-pdf/renderer's generic type mismatch
+    // between React.createElement output and renderToBuffer's expected input.
+    const pdfBuffer = (await renderToBuffer(
+      React.createElement(ReportDocument, { data: reportData }) as any
+    )) as Uint8Array;
 
-      let stdout = "";
-      let stderr = "";
+    // ---- 10. Return PDF as download ----
+    const today = new Date().toISOString().slice(0, 10);
+    const safeCampaign = campaignName
+      .replace(/[^a-zA-Z0-9\-_ ]/g, "")
+      .trim()
+      .replace(/ /g, "_");
+    const filename = `${safeCampaign}_分析报告_${today}.pdf`;
 
-      proc.stdout.on("data", (chunk) => {
-        stdout += chunk.toString();
-      });
-      proc.stderr.on("data", (chunk) => {
-        stderr += chunk.toString();
-      });
+    // Convert to a Uint8Array and then to a Buffer for NextResponse.
+    // Multiple casts needed to satisfy TS's strict ArrayBuffer vs SharedArrayBuffer typing.
+    const uint8 =
+      pdfBuffer instanceof Uint8Array ? pdfBuffer : new Uint8Array(pdfBuffer);
+    const nodeBuffer = Buffer.from(
+      uint8.buffer as ArrayBuffer,
+      uint8.byteOffset,
+      uint8.byteLength
+    );
 
-      proc.on("close", (code) => {
-        if (code !== 0) {
-          reject(
-            new Error(
-              `Python script failed (exit ${code}): ${stderr.slice(-500)}`
-            )
-          );
-        } else {
-          resolve(stdout.trim());
-        }
-      });
-
-      proc.on("error", (err) => {
-        reject(new Error(`Failed to spawn Python: ${err.message}`));
-      });
-
-      // Send JSON data via stdin
-      proc.stdin.write(JSON.stringify(reportData));
-      proc.stdin.end();
-    });
-
-    // Parse Python output
-    const pyResult = JSON.parse(result);
-
-    if (!pyResult.success) {
-      throw new Error(pyResult.error || "Python script reported failure");
-    }
-
-    // ---- 10. Read the generated PDF and return it ----
-    const pdfPath = pyResult.path;
-    const pdfBuffer = await readFile(pdfPath);
-
-    // Clean up temp file
-    await unlink(tmpFile).catch(() => {});
-
-    // Return the PDF as a download
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(nodeBuffer as unknown as BodyInit, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${encodeURIComponent(pyResult.filename)}"`,
-        "Content-Length": pdfBuffer.length.toString(),
-        "X-Report-Path": encodeURIComponent(pdfPath),
-        "X-Generated-At": pyResult.generatedAt || new Date().toISOString(),
+        "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`,
+        "Content-Length": String(nodeBuffer.length),
+        "X-Generated-At": reportData.generatedAt,
       },
     });
   } catch (err) {
-    console.error("[generate-report] Error:", err);
-    await unlink(tmpFile).catch(() => {});
-
+    console.error("[generate-report] PDF render error:", err);
     return NextResponse.json(
       {
         error: "Failed to generate PDF report.",
-        detail: err instanceof Error ? err.message : "Unknown error",
+        detail: err instanceof Error ? err.message : "Unknown rendering error",
       },
       { status: 500 }
     );
