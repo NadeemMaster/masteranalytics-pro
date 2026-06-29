@@ -30,3 +30,4 @@ db/
 
 # Lockfiles (Vercel regenerates these)
 bun.lock
+tool-results/
