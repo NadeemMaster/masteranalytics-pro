@@ -10,16 +10,19 @@ export default function Home() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-600" />
             </span>
-            Step 1 Complete — Project Initialized
+            Step 2 Complete — Database Schema Ready
           </div>
 
           <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
-            Polio Campaign Data
-            <br />
+            MasterAnalytics
             <span className="bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
-              Analytics Dashboard
+              {" "}Pro
             </span>
           </h1>
+
+          <p className="text-sm font-medium uppercase tracking-wider text-slate-500">
+            Polio Campaign Data Analytics Dashboard
+          </p>
 
           <p className="max-w-2xl text-lg text-slate-600">
             A full-stack analytics platform for polio immunization campaigns.
@@ -32,7 +35,7 @@ export default function Home() {
               { label: "Next.js 15", desc: "App Router" },
               { label: "Supabase", desc: "Auth + RLS" },
               { label: "Recharts", desc: "Visualizations" },
-              { label: "Groq AI", desc: "LLaMA-3" },
+              { label: "Groq AI", desc: "LLaMA-3.3" },
             ].map((t) => (
               <div
                 key={t.label}
@@ -56,8 +59,9 @@ export default function Home() {
                 <span className="text-green-600">✓</span> Step 1 — Dependencies
                 &amp; env template
               </li>
-              <li className="flex items-center gap-2 opacity-60">
-                <span>○</span> Step 2 — SQL schema &amp; RLS policies
+              <li className="flex items-center gap-2">
+                <span className="text-green-600">✓</span> Step 2 — SQL schema
+                &amp; RLS policies
               </li>
               <li className="flex items-center gap-2 opacity-60">
                 <span>○</span> Step 3 — Supabase client utilities
@@ -77,12 +81,37 @@ export default function Home() {
             </ol>
           </div>
 
+          <div className="mt-6 w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm">
+            <h3 className="mb-3 font-semibold text-slate-900">
+              📋 Next Action — Run the SQL in Supabase
+            </h3>
+            <ol className="list-decimal space-y-1.5 pl-5 text-sm text-slate-600">
+              <li>
+                Open your Supabase project →{" "}
+                <span className="font-medium">SQL Editor</span> → New query.
+              </li>
+              <li>
+                Paste the contents of{" "}
+                <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">
+                  /supabase/schema.sql
+                </code>
+                .
+              </li>
+              <li>Click Run. Tables + RLS policies will be created.</li>
+              <li>
+                Then go to{" "}
+                <span className="font-medium">Authentication → Providers</span>{" "}
+                and ensure <span className="font-medium">Email</span> is enabled.
+              </li>
+            </ol>
+          </div>
+
           <p className="mt-4 text-sm text-slate-500">
             Configure your{" "}
             <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">
               .env.local
             </code>{" "}
-            with Supabase &amp; Groq credentials, then proceed to Step 2.
+            with Supabase &amp; Groq credentials, then proceed to Step 3.
           </p>
         </div>
       </div>
