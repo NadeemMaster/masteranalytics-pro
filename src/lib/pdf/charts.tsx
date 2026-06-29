@@ -6,7 +6,7 @@
 // ============================================================================
 
 import React from "react";
-import { Svg, Rect, Text, Line, Path, Circle, G, View, StyleSheet } from "@react-pdf/renderer";
+import { Svg, Rect, Text, Line, Circle, G, View, StyleSheet } from "@react-pdf/renderer";
 
 // ---------------------------------------------------------------------------
 //  Color palette (matches dashboard theme)
@@ -58,7 +58,7 @@ export interface DayBarChartProps {
 export function DayBarChart({ data, width = 500, height = 220 }: DayBarChartProps) {
   if (!data || data.length === 0) return null;
 
-  const padding = { top: 20, right: 20, bottom: 40, left: 50 };
+  const padding = { top: 25, right: 20, bottom: 45, left: 50 };
   const chartW = width - padding.left - padding.right;
   const chartH = height - padding.top - padding.bottom;
 
@@ -81,7 +81,7 @@ export function DayBarChart({ data, width = 500, height = 220 }: DayBarChartProp
     n >= 1000 ? `${(n / 1000).toFixed(0)}K` : String(n);
 
   const titleStyle: SvgTextStyle = {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "bold",
     fill: CHART_COLORS.slate900,
     textAnchor: "middle",
@@ -101,7 +101,7 @@ export function DayBarChart({ data, width = 500, height = 220 }: DayBarChartProp
   return (
     <Svg width={width} height={height}>
       {/* Title */}
-      <Text x={width / 2} y={12} style={titleStyle}>
+      <Text x={width / 2} y={14} style={titleStyle}>
         Day-by-Day Campaign Progress
       </Text>
 
@@ -160,16 +160,16 @@ export function DayBarChart({ data, width = 500, height = 220 }: DayBarChartProp
       })}
 
       {/* Legend */}
-      <Rect x={padding.left} y={height - 8} width={8} height={8} fill={CHART_COLORS.blue} />
-      <Text x={padding.left + 11} y={height - 1} style={legendStyle}>
+      <Rect x={padding.left} y={height - 12} width={8} height={8} fill={CHART_COLORS.blue} />
+      <Text x={padding.left + 11} y={height - 5} style={legendStyle}>
         OPV Given
       </Text>
-      <Rect x={padding.left + 75} y={height - 8} width={8} height={8} fill={CHART_COLORS.amber} />
-      <Text x={padding.left + 86} y={height - 1} style={legendStyle}>
+      <Rect x={padding.left + 75} y={height - 12} width={8} height={8} fill={CHART_COLORS.amber} />
+      <Text x={padding.left + 86} y={height - 5} style={legendStyle}>
         Missed
       </Text>
-      <Rect x={padding.left + 140} y={height - 8} width={8} height={8} fill={CHART_COLORS.red} />
-      <Text x={padding.left + 151} y={height - 1} style={legendStyle}>
+      <Rect x={padding.left + 140} y={height - 12} width={8} height={8} fill={CHART_COLORS.red} />
+      <Text x={padding.left + 151} y={height - 5} style={legendStyle}>
         Refusals
       </Text>
     </Svg>
@@ -197,9 +197,9 @@ export function UcCoverageChart({
   if (!data || data.length === 0) return null;
 
   const sorted = [...data].sort((a, b) => a.coverage_pct - b.coverage_pct);
-  const bottom = sorted.slice(0, 10);
+  const bottom = sorted.slice(0, Math.min(10, sorted.length));
 
-  const padding = { top: 25, right: 50, bottom: 25, left: 110 };
+  const padding = { top: 30, right: 50, bottom: 25, left: 115 };
   const chartW = width - padding.left - padding.right;
   const barHeight = Math.min(
     18,
@@ -217,7 +217,7 @@ export function UcCoverageChart({
     s.length > max ? s.slice(0, max - 1) + "…" : s;
 
   const titleStyle: SvgTextStyle = {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "bold",
     fill: CHART_COLORS.slate900,
     textAnchor: "middle",
@@ -237,7 +237,7 @@ export function UcCoverageChart({
   return (
     <Svg width={width} height={height}>
       {/* Title */}
-      <Text x={width / 2} y={12} style={titleStyle}>
+      <Text x={width / 2} y={14} style={titleStyle}>
         Bottom {bottom.length} UCs by Coverage %
       </Text>
 
@@ -300,6 +300,7 @@ export function UcCoverageChart({
 
 // ---------------------------------------------------------------------------
 //  Donut Chart — Single metric (e.g., Coverage %)
+//  Uses Circle + strokeDasharray for smooth rendering (avoids jagged arc paths)
 // ---------------------------------------------------------------------------
 
 export interface DonutChartProps {
@@ -314,27 +315,18 @@ export function DonutChart({
   size = 100,
 }: DonutChartProps) {
   const radius = size / 2;
-  const strokeWidth = size * 0.18;
-  const innerRadius = radius - strokeWidth;
+  const strokeWidth = size * 0.16;
+  const innerRadius = radius - strokeWidth / 2;
 
-  // Calculate arc path
-  const angle = (value / 100) * 360;
-  const startAngle = -90; // start from top
-  const endAngle = startAngle + angle;
-
-  const polarToCartesian = (cx: number, cy: number, r: number, deg: number) => {
-    const rad = (deg * Math.PI) / 180;
-    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
-  };
-
-  const start = polarToCartesian(radius, radius, innerRadius, startAngle);
-  const end = polarToCartesian(radius, radius, innerRadius, endAngle);
-  const largeArc = angle > 180 ? 1 : 0;
-
-  const arcPath = `M ${start.x} ${start.y} A ${innerRadius} ${innerRadius} 0 ${largeArc} 1 ${end.x} ${end.y}`;
+  // Use strokeDasharray on a Circle for smooth rendering
+  const circumference = 2 * Math.PI * innerRadius;
+  const clampedValue = Math.max(0, Math.min(100, value));
+  const dashLength = (clampedValue / 100) * circumference;
+  // Rotate -90° so the arc starts from the top (12 o'clock position)
+  const rotation = `rotate(-90 ${radius} ${radius})`;
 
   const valueStyle: SvgTextStyle = {
-    fontSize: Math.round(size * 0.16),
+    fontSize: Math.round(size * 0.15),
     fontWeight: "bold",
     fill: CHART_COLORS.slate900,
     textAnchor: "middle",
@@ -342,25 +334,30 @@ export function DonutChart({
 
   return (
     <Svg width={size} height={size}>
-      {/* Background circle (track) */}
-      <Circle
-        cx={radius}
-        cy={radius}
-        r={innerRadius}
-        stroke={CHART_COLORS.slate200}
-        strokeWidth={strokeWidth}
-        fill="none"
-      />
-      {/* Filled arc */}
-      {value > 0 && (
-        <Path
-          d={arcPath}
-          stroke={color}
+      <G transform={rotation}>
+        {/* Background circle (gray track) */}
+        <Circle
+          cx={radius}
+          cy={radius}
+          r={innerRadius}
+          stroke={CHART_COLORS.slate200}
           strokeWidth={strokeWidth}
           fill="none"
-          strokeLinecap="round"
         />
-      )}
+        {/* Filled arc — using strokeDasharray for smooth rendering */}
+        {clampedValue > 0 && (
+          <Circle
+            cx={radius}
+            cy={radius}
+            r={innerRadius}
+            stroke={color}
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeDasharray={`${dashLength} ${circumference}`}
+            strokeLinecap="round"
+          />
+        )}
+      </G>
       {/* Center text — uses default Helvetica (SVG doesn't support Inter) */}
       <Text x={radius} y={radius + 4} style={valueStyle}>
         {value.toFixed(1)}%
@@ -378,7 +375,6 @@ export interface KpiSummaryChartProps {
   covered: number;
   missed: number;
   refusalRate: number;
-  width?: number;
 }
 
 export function KpiSummaryChart({
@@ -387,13 +383,11 @@ export function KpiSummaryChart({
   missed,
   refusalRate,
 }: KpiSummaryChartProps) {
-  const donutSize = 110;
+  const donutSize = 120;
 
   const coveredPct =
     covered + missed > 0 ? (covered / (covered + missed)) * 100 : 0;
 
-  // Clean row layout — donut + label only, no wrapping issues.
-  // Hyphenation is disabled globally in report-document.tsx.
   const kpiSummaryStyles = StyleSheet.create({
     container: {
       flexDirection: "row",
@@ -405,13 +399,14 @@ export function KpiSummaryChart({
       alignItems: "center",
     },
     cardLabel: {
-      fontFamily: "Inter-SemiBold",
+      fontFamily: "Inter",
       fontSize: 10,
       color: CHART_COLORS.slate700,
       textAlign: "center",
-      marginTop: 6,
+      marginTop: 8,
     },
     title: {
+      fontFamily: "Inter",
       fontSize: 12,
       fontWeight: "bold",
       color: CHART_COLORS.slate900,

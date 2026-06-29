@@ -2,11 +2,18 @@
 //  MasterAnalytics Pro — Next.js Middleware Entry Point
 //  Next.js requires the middleware file at src/middleware.ts (or root).
 //  We delegate to the Supabase session-refresh helper in lib/supabase.
+//
+//  IMPORTANT: We use the Node.js runtime (not Edge) because @supabase/ssr
+//  internally references process.version which is not available in the
+//  Edge Runtime. This is safe — Vercel supports Node.js middleware.
+//
 //  Author: M. Nadeem Akhtar (https://www.facebook.com/itxmasterjee)
 // ============================================================================
 
 import { type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+
+export const runtime = "nodejs";
 
 export async function middleware(request: NextRequest) {
   return await updateSession(request);

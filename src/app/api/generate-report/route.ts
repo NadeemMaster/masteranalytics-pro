@@ -22,6 +22,7 @@ import {
   type InsightDataContext,
 } from "@/lib/groq/prompt";
 import { ReportDocument, type ReportData } from "@/lib/pdf/report-document";
+import { addPageNumbers } from "@/lib/pdf/add-page-numbers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -271,9 +272,13 @@ export async function GET(request: NextRequest) {
   try {
     // Cast to any to work around @react-pdf/renderer's generic type mismatch
     // between React.createElement output and renderToBuffer's expected input.
-    const pdfBuffer = (await renderToBuffer(
+    const rawPdfBuffer = (await renderToBuffer(
       React.createElement(ReportDocument, { data: reportData }) as any
     )) as Uint8Array;
+
+    // Post-process: add "Page 01/10" footers using pdf-lib
+    // (react-pdf's `fixed` prop doesn't work reliably for dynamic page numbers)
+    const pdfBuffer = await addPageNumbers(rawPdfBuffer);
 
     // ---- 10. Return PDF as download ----
     const today = new Date().toISOString().slice(0, 10);

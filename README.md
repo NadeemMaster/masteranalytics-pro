@@ -11,15 +11,15 @@ to identify underperforming areas.
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | Next.js 15 (App Router) + React 19 + TypeScript |
-| Styling | Tailwind CSS 3 + shadcn/ui primitives |
-| Database & Auth | Supabase (PostgreSQL + RLS) |
-| Charts | Recharts |
-| AI Insights | Groq SDK (LLaMA-3.3-70B) |
-| Excel parsing | SheetJS (`xlsx`) |
-| Notifications | Sonner |
+| Layer           | Technology                                      |
+| --------------- | ----------------------------------------------- |
+| Framework       | Next.js 15 (App Router) + React 19 + TypeScript |
+| Styling         | Tailwind CSS 3 + shadcn/ui primitives           |
+| Database & Auth | Supabase (PostgreSQL + RLS)                     |
+| Charts          | Recharts                                        |
+| AI Insights     | Groq SDK (LLaMA-3.3-70B)                        |
+| Excel parsing   | SheetJS (`xlsx`)                                |
+| Notifications   | Sonner                                          |
 
 ---
 
@@ -29,7 +29,7 @@ You have **three options** — pick whichever fits your workflow.
 
 ### Option A — Download the ZIP (fastest, one-time)
 
-1. The file `download/masteranalytics-pro.zip` (75 KB) is ready in this workspace.
+1. The file `download/masteranalytics-pro.zip` is ready in this workspace.
 2. Download it to your PC.
 3. Unzip it anywhere:
    ```bash
@@ -55,12 +55,12 @@ This workspace already has a git repo initialized. To push it to your own GitHub
 2. In this workspace, run (replacing `YOUR_USERNAME`):
    ```bash
    cd /home/z/my-project
-   git remote add origin https://github.com/YOUR_USERNAME/masteranalytics-pro.git
+   git remote add origin https://github.com/NadeemMaster/masteranalytics-pro.git
    git push -u origin main
    ```
 3. On your PC:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/masteranalytics-pro.git
+   git clone https://github.com/NadeemMaster/masteranalytics-pro.git
    cd masteranalytics-pro
    bun install        # or npm install
    cp .env.example .env.local
@@ -72,6 +72,7 @@ This workspace already has a git repo initialized. To push it to your own GitHub
 ### Option C — Copy individual files
 
 Anything in `download/` is directly downloadable. Currently:
+
 - `download/schema.sql` — the Supabase SQL schema
 - `download/masteranalytics-pro.zip` — full project ZIP
 - `download/README.md` — this file
@@ -81,29 +82,33 @@ Anything in `download/` is directly downloadable. Currently:
 ## Deploy to Vercel
 
 ### Prerequisites
+
 1. A Supabase project with `schema.sql` executed (Step 2).
 2. A Groq API key from https://console.groq.com/keys.
 3. The project pushed to GitHub (Option B above) OR a ZIP ready (Option A).
 
 ### Deploy steps
+
 1. Go to https://vercel.com → **Add New Project**.
 2. Import your GitHub repo (or drag the ZIP if using Option A).
 3. Vercel auto-detects Next.js — keep defaults.
 4. **Add Environment Variables** (Settings → Environment Variables):
 
-   | Key | Value |
-   |---|---|
-   | `NEXT_PUBLIC_SUPABASE_URL` | `https://YOUR-PROJECT-ref.supabase.co` |
-   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | your Supabase anon key |
-   | `SUPABASE_SERVICE_ROLE_KEY` | your Supabase service role key |
-   | `GROQ_API_KEY` | your Groq key |
-   | `GROQ_MODEL` | `llama-3.3-70b-versatile` |
+   | Key                             | Value                                  |
+   | ------------------------------- | -------------------------------------- |
+   | `NEXT_PUBLIC_SUPABASE_URL`      | `https://YOUR-PROJECT-ref.supabase.co` |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | your Supabase anon key                 |
+   | `SUPABASE_SERVICE_ROLE_KEY`     | your Supabase service role key         |
+   | `GROQ_API_KEY`                  | your Groq key                          |
+   | `GROQ_MODEL`                    | `llama-3.3-70b-versatile`              |
 
 5. Click **Deploy**. First build takes ~2 minutes.
 6. After deploy, copy your Vercel URL (e.g. `https://masteranalytics-pro.vercel.app`).
 
 ### Supabase URL allow-list (REQUIRED for auth to work)
+
 In Supabase Dashboard → **Authentication → URL Configuration**:
+
 - **Site URL**: `https://masteranalytics-pro.vercel.app`
 - **Redirect URLs**: add `https://masteranalytics-pro.vercel.app/auth/callback`
 

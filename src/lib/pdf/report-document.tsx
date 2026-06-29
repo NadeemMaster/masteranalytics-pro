@@ -47,35 +47,25 @@ Font.register({
   fonts: [
     {
       src: `${process.cwd()}/public/fonts/Inter-Regular.ttf`,
-      fontWeight: "normal",
+      fontWeight: 400,
       fontStyle: "normal",
     },
     {
       src: `${process.cwd()}/public/fonts/Inter-Medium.ttf`,
-      fontWeight: "medium",
+      fontWeight: 500,
       fontStyle: "normal",
     },
     {
       src: `${process.cwd()}/public/fonts/Inter-SemiBold.ttf`,
-      fontWeight: "semibold",
+      fontWeight: 600,
       fontStyle: "normal",
     },
     {
       src: `${process.cwd()}/public/fonts/Inter-Bold.ttf`,
-      fontWeight: "bold",
+      fontWeight: 700,
       fontStyle: "normal",
     },
   ],
-});
-
-// Register font aliases for convenience
-Font.register({
-  family: "Inter-Bold",
-  src: `${process.cwd()}/public/fonts/Inter-Bold.ttf`,
-});
-Font.register({
-  family: "Inter-SemiBold",
-  src: `${process.cwd()}/public/fonts/Inter-SemiBold.ttf`,
 });
 
 // Disable hyphenation — prevents "Cov-er-age" style word breaking in narrow columns
@@ -145,7 +135,6 @@ export interface ReportData {
 const styles = StyleSheet.create({
   // ---- Page ----
   page: {
-    size: "A4",
     paddingTop: 2.5 * 28.35, // 2.5cm
     paddingBottom: 2.5 * 28.35,
     paddingLeft: 2 * 28.35, // 2cm
@@ -156,7 +145,6 @@ const styles = StyleSheet.create({
     lineHeight: 1.6,
   },
   coverPage: {
-    size: "A4",
     paddingTop: 6 * 28.35,
     paddingBottom: 2.5 * 28.35,
     paddingLeft: 2 * 28.35,
@@ -169,7 +157,7 @@ const styles = StyleSheet.create({
   // ---- Cover ----
   coverBadge: {
     fontSize: 9,
-    fontFamily: "Inter-SemiBold",
+    fontFamily: "Inter",
     color: CHART_COLORS.blue,
     backgroundColor: "#dbeafe",
     paddingHorizontal: 12,
@@ -229,7 +217,7 @@ const styles = StyleSheet.create({
     fontSize: 7,
     color: "#ffffff",
     textAlign: "center",
-    fontFamily: "Inter-SemiBold",
+    fontFamily: "Inter",
     textTransform: "uppercase",
     letterSpacing: 0.3,
   },
@@ -259,14 +247,14 @@ const styles = StyleSheet.create({
   },
   h2: {
     fontSize: 14,
-    fontWeight: "semibold",
+    fontWeight: 600,
     color: CHART_COLORS.slate900,
     marginTop: 16,
     marginBottom: 8,
   },
   h3: {
     fontSize: 12,
-    fontFamily: "Inter-SemiBold",
+    fontFamily: "Inter",
     color: CHART_COLORS.slate700,
     marginTop: 12,
     marginBottom: 6,
@@ -305,7 +293,7 @@ const styles = StyleSheet.create({
     padding: 8,
     color: "#ffffff",
     fontSize: 9,
-    fontFamily: "Inter-SemiBold",
+    fontFamily: "Inter",
     textAlign: "center",
   },
   tableRow: {
@@ -344,30 +332,16 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
 
-  // ---- Header & Footer ----
-  header: {
-    position: "absolute",
-    top: 15,
-    left: 2 * 28.35,
-    right: 2 * 28.35,
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    fontSize: 10,
-    color: CHART_COLORS.slate500,
-    paddingBottom: 4,
-    borderBottomWidth: 0.5,
-    borderBottomColor: CHART_COLORS.slate200,
-    fontFamily: "Inter",
-  },
+  // ---- Footer only (no header — user requested page numbers at bottom only) ----
   footer: {
     position: "absolute",
-    bottom: 15,
+    bottom: 20,
     left: 2 * 28.35,
     right: 2 * 28.35,
-    alignItems: "center",
+    textAlign: "center",
     fontSize: 9,
     color: CHART_COLORS.slate500,
-    paddingTop: 4,
+    paddingTop: 6,
     borderTopWidth: 0.5,
     borderTopColor: CHART_COLORS.slate200,
     fontFamily: "Inter",
@@ -389,7 +363,7 @@ const styles = StyleSheet.create({
   },
   recPriorityBadge: {
     fontSize: 8,
-    fontFamily: "Inter-Bold",
+    fontFamily: "Inter",
     color: "#ffffff",
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -419,24 +393,6 @@ const fmtPct = (n: number, digits = 2) => `${n.toFixed(digits)}%`;
 // ---------------------------------------------------------------------------
 //  Header & Footer components
 // ---------------------------------------------------------------------------
-
-function PageHeader({ title }: { title: string }) {
-  return (
-    <View style={styles.header} fixed>
-      <Text>{title}</Text>
-    </View>
-  );
-}
-
-function PageFooter() {
-  return (
-    <View style={styles.footer} fixed>
-      <Text
-        render={({ pageNumber }) => `Page ${pageNumber}`}
-      />
-    </View>
-  );
-}
 
 // ---------------------------------------------------------------------------
 //  Cover Page
@@ -605,15 +561,15 @@ function RecommendationCard({
       </View>
       <Text style={styles.recText}>{text}</Text>
       <Text style={styles.recMeta}>
-        <Text style={{ color: CHART_COLORS.green, fontWeight: "semibold" }}>Impact: </Text>
+        <Text style={{ color: CHART_COLORS.green, fontWeight: 600 }}>Impact: </Text>
         {impact}
       </Text>
       <Text style={styles.recMeta}>
-        <Text style={{ color: CHART_COLORS.amber, fontWeight: "semibold" }}>Risk: </Text>
+        <Text style={{ color: CHART_COLORS.amber, fontWeight: 600 }}>Risk: </Text>
         {risk}
       </Text>
       <Text style={styles.recMeta}>
-        <Text style={{ color: CHART_COLORS.blue, fontWeight: "semibold" }}>Validation: </Text>
+        <Text style={{ color: CHART_COLORS.blue, fontWeight: 600 }}>Validation: </Text>
         {validation}
       </Text>
     </View>
@@ -642,10 +598,8 @@ export function ReportDocument({ data }: { data: ReportData }) {
       {/* ===== COVER PAGE (no header/footer) ===== */}
       <CoverPage data={data} reportDate={reportDate} />
 
-      {/* ===== CONTENT PAGES (with header + footer) ===== */}
+      {/* ===== CONTENT PAGES (footer only — no header) ===== */}
       <Page size="A4" style={styles.page}>
-        <PageHeader title={reportTitle} />
-        <PageFooter />
 
         {/* ================================================================
             SECTION 1: Scope & Definitions
