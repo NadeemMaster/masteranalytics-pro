@@ -11,7 +11,6 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { createClient, getUser } from "@/lib/supabase/server";
 import {
-  getColumns,
   getSelectString,
   getEditableKeys,
   coerceValue,
@@ -91,7 +90,7 @@ export async function GET(request: NextRequest) {
     if (Number.isFinite(dayNum)) query = query.eq("campaign_day", dayNum);
   }
 
-  const { data, error, count } = await query;
+  const { data, error } = await query;
 
   if (error) {
     console.error(`[rows] ${tableName} query error:`, error);

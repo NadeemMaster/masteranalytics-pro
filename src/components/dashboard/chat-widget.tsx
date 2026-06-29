@@ -241,7 +241,7 @@ export function ChatWidget({
                       : "Hello!"}
                   </p>
                   <p className="mt-0.5 text-sm font-medium text-blue-600">
-                    I'm Master!
+                    {"I'm Master!"}
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
                     How can I help you? Ask me about your campaign data —
