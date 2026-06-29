@@ -260,7 +260,7 @@ export function CoverageVsTargetChart({ data, limit = 10 }: CoverageVsTargetChar
       uc: u.uc.length > 14 ? `${u.uc.slice(0, 12)}…` : u.uc,
       fullName: u.uc,
       target: u.target,
-      opv: u.opv,
+      adminCoverage: u.adminCoverage,
       coverage: Number(u.coveragePct.toFixed(2)),
     }));
   }, [data, limit]);
@@ -274,7 +274,7 @@ export function CoverageVsTargetChart({ data, limit = 10 }: CoverageVsTargetChar
           <div>
             <CardTitle className="text-base">Admin Coverage vs Target (top UCs)</CardTitle>
             <CardDescription>
-              Target vs OPV with admin coverage % overlay
+              Target vs Admin Coverage with coverage % overlay
             </CardDescription>
           </div>
           <Badge variant="info">Top {limit}</Badge>
@@ -321,14 +321,14 @@ export function CoverageVsTargetChart({ data, limit = 10 }: CoverageVsTargetChar
               <Tooltip
                 contentStyle={tooltipStyle}
                 formatter={(value, name) => {
-                  const label = name === "Coverage %" ? `${Number(value).toFixed(1)}%` : formatTooltipValue(value as number);
+                  const label = name === "Admin Coverage %" ? `${Number(value).toFixed(1)}%` : formatTooltipValue(value as number);
                   return [label, name as string];
                 }}
                 cursor={{ fill: "rgba(148,163,184,0.08)" }}
               />
               <Legend wrapperStyle={{ fontSize: 12 }} />
               <defs>
-                <linearGradient id="opvGradient" x1="0" y1="0" x2="0" y2="1">
+                <linearGradient id="adminCoverageGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor={CHART.c1} stopOpacity={0.9} />
                   <stop offset="95%" stopColor={CHART.c1} stopOpacity={0.5} />
                 </linearGradient>
@@ -337,10 +337,10 @@ export function CoverageVsTargetChart({ data, limit = 10 }: CoverageVsTargetChar
               <Area
                 yAxisId="left"
                 type="monotone"
-                dataKey="opv"
-                name="OPV Issued"
+                dataKey="adminCoverage"
+                name="Admin Coverage"
                 stroke={CHART.c1}
-                fill="url(#opvGradient)"
+                fill="url(#adminCoverageGradient)"
                 strokeWidth={2}
               />
               <Line
