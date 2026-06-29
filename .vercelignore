@@ -4,8 +4,8 @@
 # Local download artifacts
 download/
 
-# Upload directory (local dev only)
-upload/
+# Upload directory (local dev only — anchored to root so src/app/upload/ is NOT excluded)
+/upload/
 
 # Skills reference directory (not part of the app)
 skills/
