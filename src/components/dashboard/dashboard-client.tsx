@@ -28,6 +28,7 @@ import {
 } from "@/components/dashboard/charts";
 import { CampaignComparison } from "@/components/dashboard/campaign-comparison";
 import { AiInsightsCard } from "@/components/dashboard/ai-insights";
+import { PdfReportButton } from "@/components/dashboard/pdf-report-button";
 import {
   Card,
   CardContent,
@@ -180,14 +181,32 @@ export function DashboardClient({
         <CoverageVsTargetChart data={data.ucBreakdown} limit={10} />
       )}
 
-      {/* AI Insights (Groq LLaMA-3) */}
+      {/* AI Insights (Groq LLaMA-3) + PDF Export */}
       {!pending ? (
-        <AiInsightsCard
-          campaign={filters.campaign || ""}
-          tehsil={filters.tehsil || undefined}
-          ucName={filters.uc || undefined}
-          day={filters.day === "all" ? "all" : (parseInt(filters.day, 10) as 1 | 2 | 3 | 4)}
-        />
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">
+                AI Analysis &amp; Report
+              </h3>
+              <p className="text-sm text-slate-500">
+                Generate AI insights or export a full PDF analysis report.
+              </p>
+            </div>
+            <PdfReportButton
+              campaign={filters.campaign || ""}
+              tehsil={filters.tehsil || undefined}
+              ucName={filters.uc || undefined}
+              day={filters.day === "all" ? "all" : (parseInt(filters.day, 10) as 1 | 2 | 3 | 4)}
+            />
+          </div>
+          <AiInsightsCard
+            campaign={filters.campaign || ""}
+            tehsil={filters.tehsil || undefined}
+            ucName={filters.uc || undefined}
+            day={filters.day === "all" ? "all" : (parseInt(filters.day, 10) as 1 | 2 | 3 | 4)}
+          />
+        </div>
       ) : null}
 
       {/* Raw rows table */}

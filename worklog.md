@@ -275,3 +275,52 @@ Stage Summary:
 - Files created (12): `src/components/ui/{select,tabs,table,progress,skeleton}.tsx`, `src/lib/dashboard/aggregate.ts`, `src/app/api/dashboard-data/route.ts`, `src/app/api/campaign-comparison/route.ts`, `src/components/dashboard/{filter-bar,kpi-cards,charts,campaign-comparison,dashboard-client}.tsx`.
 - Files modified (2): `src/app/dashboard/page.tsx` (replaced placeholder with full dashboard), `src/app/page.tsx` (progress tracker updated).
 - Next: Step 7 — Groq LLaMA-3 AI Insights on top of the aggregated dashboard data.
+
+---
+Task ID: 7
+Agent: main (Super Z)
+Task: Step 7 — Groq AI Insight API route & UI component
+
+Work Log:
+- Created `src/lib/groq/client.ts` — singleton Groq SDK client wrapper:
+  * `getGroqClient()` — lazy init, throws if GROQ_API_KEY missing/placeholder
+  * `getGroqModel()` — returns model id (default llama-3.3-70b-versatile, configurable via GROQ_MODEL)
+- Created `src/lib/groq/prompt.ts` — prompt engineering:
+  * `buildSystemPrompt()` — sets AI role as senior public health analyst, strict JSON output format with: summary, keyFindings[], underperformingUCs[], highRefusalAreas[], recommendations[]
+  * `buildUserPrompt(ctx)` — includes campaign scope, KPI table, day-by-day breakdown table, UC-wise breakdown table
+  * `parseInsightResponse(content)` — strips markdown fences, extracts JSON, validates required fields
+  * `InsightDataContext` + `AiInsights` TypeScript interfaces
+- Created `src/app/api/ai-insights/route.ts` — GET handler:
+  * Authenticates via getUser() — 401 if not signed in
+  * Accepts query params: campaign (required), tehsil, uc, day (1|2|3|4|all)
+  * Fetches daily + catchup data from Supabase (RLS-scoped to user_id)
+  * Aggregates KPIs: totalTarget, opvCovered, coveragePct, missedChildren, refusals, teamsReported
+  * Builds UC breakdown (deduped by tehsil+uc) + day breakdown (including Day 4 from catchup)
+  * Calls Groq chat.completions.create with temperature=0.3, max_tokens=2000, response_format=json_object
+  * Parses response, returns { success, campaign, filters, kpis, insights, generatedAt }
+  * Error handling: 404 if no data, 502 if Groq API fails or response unparseable
+  * Cast Supabase query results to explicit DailyRow/CatchupRow types (workaround for generic resolution)
+- Created `src/components/dashboard/ai-insights.tsx` — AiInsightsCard Client Component:
+  * Empty state: gradient card with Sparkles icon, "Generate Insights" button (disabled if no campaign selected)
+  * Loading state: skeleton placeholders with spinner
+  * Error state: red card with AlertTriangle, retry button
+  * Results: 4-card layout —
+    1. Summary card (blue gradient) with regenerate button + timestamp
+    2. Key Findings (green, numbered list)
+    3. Two-column grid: Underperforming UCs (amber, with MapPin + issue + recommendation) + High Refusal Areas (red, with refusal count + type + recommendation)
+    4. Action Plan (numbered recommendations with priority-colored badges)
+  * All sections use lucide icons, shadcn Badge/Card/Button, Sonner toasts
+- Integrated AiInsightsCard into DashboardClient (after charts, before raw rows table)
+- Updated landing page progress tracker (Step 7 marked ✓, badge updated)
+- Fixed: campaign prop type (filters.campaign || "" to handle undefined), Supabase query result types (explicit casts)
+- Verified: `bun run lint` → ✔ No ESLint warnings or errors; `bunx tsc --noEmit` → exit 0.
+- Refreshed `download/masteranalytics-pro.zip` (160 KB).
+- Committed: "Step 7: Groq AI insights — /api/ai-insights route + AiInsightsCard component (LLaMA-3.3-70B)".
+
+Stage Summary:
+- AI insight pipeline complete: filter data → aggregate KPIs → build structured prompt → Groq LLaMA-3.3-70B → parse JSON → render styled cards.
+- AI identifies underperforming UCs (bottom coverage), high-refusal areas (top refusals), and provides 3 actionable recommendations with priority.
+- Temperature 0.3 for factual analysis; response_format=json_object guarantees valid JSON.
+- Insights respect current dashboard filters (campaign, tehsil, UC, day).
+- User flow complete: signup → login → upload Excel → view dashboard with KPIs + charts + AI insights.
+- Next: Step 8 — PDF Report export (reportlab, A4, bookmarks, headers/footers) per the Data Analysis Report Prompt.
