@@ -78,6 +78,9 @@ Font.register({
   src: `${process.cwd()}/public/fonts/Inter-SemiBold.ttf`,
 });
 
+// Disable hyphenation — prevents "Cov-er-age" style word breaking in narrow columns
+Font.registerHyphenationCallback((word: string) => [word]);
+
 // ---------------------------------------------------------------------------
 //  Types
 // ---------------------------------------------------------------------------

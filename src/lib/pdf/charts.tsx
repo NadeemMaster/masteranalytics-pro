@@ -344,7 +344,7 @@ export function DonutChart({
   };
 
   return (
-    <Svg width={size} height={size}>
+    <Svg width={size} height={size} style={{ overflow: "visible" as never }}>
       {/* Background circle (track) */}
       <Circle
         cx={radius}
@@ -364,7 +364,7 @@ export function DonutChart({
           strokeLinecap="round"
         />
       )}
-      {/* Center text */}
+      {/* Center text — overflow visible so % sign isn't clipped */}
       <Text x={radius} y={radius + 4} style={valueStyle}>
         {value.toFixed(1)}%
       </Text>
@@ -395,93 +395,64 @@ export function KpiSummaryChart({
   const coveredPct =
     covered + missed > 0 ? (covered / (covered + missed)) * 100 : 0;
 
-  // Card-based layout: each donut in its own card with label + count below.
+  // Clean row layout — donut + label only, no wrapping issues.
+  // Hyphenation is disabled globally in report-document.tsx.
   const kpiSummaryStyles = StyleSheet.create({
     container: {
       flexDirection: "row",
-      justifyContent: "center",
-      alignItems: "stretch",
-      gap: 12,
+      justifyContent: "space-around",
+      alignItems: "flex-start",
+      paddingHorizontal: 20,
     },
-    card: {
-      flex: 1,
+    donutCol: {
       alignItems: "center",
-      paddingVertical: 14,
-      paddingHorizontal: 8,
-      borderWidth: 1,
-      borderColor: CHART_COLORS.slate200,
-      borderRadius: 8,
-      backgroundColor: "#ffffff",
     },
     cardLabel: {
       fontFamily: "Inter-SemiBold",
-      fontSize: 9,
+      fontSize: 10,
       color: CHART_COLORS.slate700,
-      textAlign: "center",
-      marginBottom: 8,
-      textTransform: "uppercase",
-      letterSpacing: 0.3,
-    },
-    cardCount: {
-      fontFamily: "Inter",
-      fontSize: 8,
-      color: CHART_COLORS.slate500,
       textAlign: "center",
       marginTop: 6,
     },
     title: {
       fontFamily: "Inter",
-      fontSize: 11,
+      fontSize: 12,
       fontWeight: "bold",
       color: CHART_COLORS.slate900,
       textAlign: "center",
-      marginBottom: 12,
+      marginBottom: 14,
     },
   });
-
-  const fmtCompact = (n: number) => {
-    if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
-    return String(n);
-  };
 
   return (
     <View>
       <Text style={kpiSummaryStyles.title}>Campaign KPI Summary</Text>
       <View style={kpiSummaryStyles.container}>
-        <View style={kpiSummaryStyles.card}>
-          <Text style={kpiSummaryStyles.cardLabel}>Coverage</Text>
+        <View style={kpiSummaryStyles.donutCol}>
           <DonutChart
             value={coveragePct}
             color={CHART_COLORS.blue}
             size={donutSize}
           />
-          <Text style={kpiSummaryStyles.cardCount}>
-            {fmtCompact(covered)} / {fmtCompact(covered + missed)} children
-          </Text>
+          <Text style={kpiSummaryStyles.cardLabel}>Coverage</Text>
         </View>
 
-        <View style={kpiSummaryStyles.card}>
-          <Text style={kpiSummaryStyles.cardLabel}>Covered vs Missed</Text>
+        <View style={kpiSummaryStyles.donutCol}>
           <DonutChart
             value={coveredPct}
             color={CHART_COLORS.green}
             size={donutSize}
           />
-          <Text style={kpiSummaryStyles.cardCount}>
-            {fmtCompact(missed)} missed
-          </Text>
+          <Text style={kpiSummaryStyles.cardLabel}>Vaccinated</Text>
         </View>
 
-        <View style={kpiSummaryStyles.card}>
-          <Text style={kpiSummaryStyles.cardLabel}>Refusal Rate</Text>
+        <View style={kpiSummaryStyles.donutCol}>
           <DonutChart
             value={Math.min(refusalRate, 100)}
             color={CHART_COLORS.red}
             size={donutSize}
           />
-          <Text style={kpiSummaryStyles.cardCount}>
-            {refusalRate.toFixed(2)}% of target
-          </Text>
+          <Text style={kpiSummaryStyles.cardLabel}>Refusals</Text>
         </View>
       </View>
     </View>

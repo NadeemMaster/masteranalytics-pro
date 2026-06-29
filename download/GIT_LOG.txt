@@ -1,0 +1,183 @@
+80d2ce1 Fix PDF rendering: cover KPI table (View-based headers + width:100%) and donut charts (card layout with labels + counts)
+ download/masteranalytics-pro.zip | Bin 1335813 -> 1127589 bytes
+ src/lib/pdf/charts.tsx           | 115 +++++++++++++++++++++++++--------------
+ src/lib/pdf/report-document.tsx  |  70 +++++++++++++++++-------
+ 3 files changed, 124 insertions(+), 61 deletions(-)
+ce44c75 Switch PDF to Inter font (modern English), English-only filenames, enhanced Section 6 with priority+impact+risks+validation cards
+ .vercelignore                                  |  12 +-
+ bun.lock                                       |   3 +
+ download/MasterAnalytics_Pro_Sample_Report.pdf | Bin 0 -> 69941 bytes
+ download/masteranalytics-pro.zip               | Bin 401998 -> 1335813 bytes
+ package.json                                   |   1 +
+ public/fonts/Inter-Bold.ttf                    | Bin 0 -> 415072 bytes
+ public/fonts/Inter-Medium.ttf                  | Bin 0 -> 411500 bytes
+ public/fonts/Inter-Regular.ttf                 | Bin 0 -> 407056 bytes
+ public/fonts/Inter-SemiBold.ttf                | Bin 0 -> 413976 bytes
+ src/app/api/generate-report/route.ts           |   3 +-
+ src/components/dashboard/pdf-report-button.tsx |   2 +-
+ src/lib/pdf/charts.tsx                         |  14 +-
+ src/lib/pdf/report-document.tsx                | 370 ++++++++++++++++++-------
+ 13 files changed, 300 insertions(+), 105 deletions(-)
+8bd93bc Remove tool-results artifacts from subagent audit
+ .gitignore                                       |   1 +
+ .vercelignore                                    |   1 +
+ tool-results/read_1782741868019_40c29c6b9680.txt | 403 ------------
+ tool-results/read_1782741881745_dff4fe6cad49.txt | 403 ------------
+ tool-results/read_1782741887855_40c29c6b9680.txt | 403 ------------
+ tool-results/read_1782741897954_a60d8127e275.txt | 302 ---------
+ tool-results/read_1782741973160_df8d1b824097.txt | 797 -----------------------
+ 7 files changed, 2 insertions(+), 2308 deletions(-)
+69c9346 Vercel compat audit: remove dead Python files (9.4MB simhei.ttf + generate_report.py), add .vercelignore, clean legacy .env, update README
+ .env                                             |   1 -
+ .vercelignore                                    |  32 +
+ README.md                                        |  43 +-
+ download/masteranalytics-pro.zip                 | Bin 338388 -> 401998 bytes
+ fonts/simhei.ttf                                 | Bin 9751960 -> 0 bytes
+ scripts/report/generate_report.py                | 813 -----------------------
+ tool-results/read_1782741868019_40c29c6b9680.txt | 403 +++++++++++
+ tool-results/read_1782741881745_dff4fe6cad49.txt | 403 +++++++++++
+ tool-results/read_1782741887855_40c29c6b9680.txt | 403 +++++++++++
+ tool-results/read_1782741897954_a60d8127e275.txt | 302 +++++++++
+ tool-results/read_1782741973160_df8d1b824097.txt | 797 ++++++++++++++++++++++
+ worklog.md                                       |  64 ++
+ 12 files changed, 2436 insertions(+), 825 deletions(-)
+2596610 Add vercel.json with function maxDuration settings (60s for PDF, 30s for AI/upload)
+ download/masteranalytics-pro.zip | Bin 338094 -> 338388 bytes
+ vercel.json                      |  14 ++++++++++++++
+ 2 files changed, 14 insertions(+)
+7c507b9 Step 8 (Vercel-compatible): Rewrite PDF generator in pure TypeScript using @react-pdf/renderer — no Python needed
+ bun.lock                             | 119 +++++-
+ download/masteranalytics-pro.zip     | Bin 320466 -> 338094 bytes
+ package.json                         |  37 +-
+ src/app/api/generate-report/route.ts | 175 +++-----
+ src/lib/pdf/charts.tsx               | 444 +++++++++++++++++++
+ src/lib/pdf/report-document.tsx      | 796 +++++++++++++++++++++++++++++++++++
+ 6 files changed, 1443 insertions(+), 128 deletions(-)
+634b241 34a3cdb7-2043-44d7-8164-532e29d477aa
+ worklog.md | 76 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 76 insertions(+)
+89fb89a Step 8: PDF Report export — Python reportlab generator + /api/generate-report route + dashboard button (A4, bookmarks, headers/footers, 7 sections)
+ ...236\220\346\212\245\345\221\212_2026-06-29.pdf" | 308 ++++++++
+ download/charts/chart_day_progress.png             | Bin 0 -> 32881 bytes
+ download/charts/chart_kpi_summary.png              | Bin 0 -> 63327 bytes
+ download/charts/chart_uc_coverage.png              | Bin 0 -> 65340 bytes
+ download/masteranalytics-pro.zip                   | Bin 163501 -> 320466 bytes
+ fonts/simhei.ttf                                   | Bin 0 -> 9751960 bytes
+ scripts/report/generate_report.py                  | 813 +++++++++++++++++++++
+ src/app/api/generate-report/route.ts               | 356 +++++++++
+ src/app/page.tsx                                   |   7 +-
+ src/components/dashboard/dashboard-client.tsx      |  33 +-
+ src/components/dashboard/pdf-report-button.tsx     | 109 +++
+ worklog.md                                         |  49 ++
+ 12 files changed, 1665 insertions(+), 10 deletions(-)
+208281e Step 7: Groq AI insights — /api/ai-insights route + AiInsightsCard component (LLaMA-3.3-70B)
+ download/masteranalytics-pro.zip                 | Bin 122888 -> 163501 bytes
+ src/app/api/ai-insights/route.ts                 | 291 ++++++++++++++++
+ src/app/api/campaign-comparison/route.ts         |  52 +++
+ src/app/api/dashboard-data/route.ts              |  65 ++++
+ src/app/dashboard/page.tsx                       | 369 +++++++++++++++------
+ src/app/page.tsx                                 |  13 +-
+ src/components/dashboard/ai-insights.tsx         | 389 ++++++++++++++++++++++
+ src/components/dashboard/campaign-comparison.tsx | 356 ++++++++++++++++++++
+ src/components/dashboard/charts.tsx              | 383 +++++++++++++++++++++
+ src/components/dashboard/dashboard-client.tsx    | 274 +++++++++++++++
+ src/components/dashboard/filter-bar.tsx          | 228 +++++++++++++
+ src/components/dashboard/kpi-cards.tsx           | 232 +++++++++++++
+ src/components/ui/progress.tsx                   |  33 ++
+ src/components/ui/select.tsx                     | 158 +++++++++
+ src/components/ui/skeleton.tsx                   |  15 +
+ src/components/ui/table.tsx                      | 120 +++++++
+ src/components/ui/tabs.tsx                       |  55 ++++
+ src/lib/dashboard/aggregate.ts                   | 403 +++++++++++++++++++++++
+ src/lib/groq/client.ts                           |  34 ++
+ src/lib/groq/prompt.ts                           | 194 +++++++++++
+ worklog.md                                       | 121 +++++++
+ 21 files changed, 3674 insertions(+), 111 deletions(-)
+406eeff Step 5: Excel parser + /api/upload route + /upload UI (drag-drop, per-row status, cumulative-replace upsert)
+ download/masteranalytics-pro.zip | Bin 105561 -> 122888 bytes
+ src/types/database.ts            |   8 ++++++++
+ 2 files changed, 8 insertions(+)
+35dba0b 9039df18-9d42-4a72-91eb-3bbacde11238
+ src/app/dashboard/page.tsx   |  44 +++++--
+ src/app/page.tsx             |   7 +-
+ src/components/ui/badge.tsx  |  41 +++++++
+ src/lib/excel/column-maps.ts | 173 ++++++++++++++++++++++++++
+ src/lib/excel/normalize.ts   |  48 ++++++++
+ src/lib/excel/parser.ts      | 283 +++++++++++++++++++++++++++++++++++++++++++
+ src/types/database.ts        | 130 +++++++++++++++++---
+ 7 files changed, 697 insertions(+), 29 deletions(-)
+4098845 52ec03be-2fb9-4bfb-96fb-bef05167660b
+ worklog.md | 55 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 55 insertions(+)
+49b719f Step 4: Authentication UI (login/signup) + auth callback + logout + UserMenu + dashboard placeholder
+ download/masteranalytics-pro.zip     | Bin 87917 -> 105561 bytes
+ src/app/actions.ts                   |  19 ++++
+ src/app/auth/callback/route.ts       |  64 +++++++++++
+ src/app/dashboard/page.tsx           | 136 ++++++++++++++++++++++
+ src/app/login/login-form.tsx         | 177 +++++++++++++++++++++++++++++
+ src/app/login/page.tsx               |  78 +++++++++++++
+ src/app/page.tsx                     |   7 +-
+ src/app/signup/page.tsx              |  70 ++++++++++++
+ src/app/signup/signup-form.tsx       | 214 +++++++++++++++++++++++++++++++++++
+ src/components/ui/avatar.tsx         |  50 ++++++++
+ src/components/ui/dropdown-menu.tsx  | 196 ++++++++++++++++++++++++++++++++
+ src/components/ui/password-input.tsx |  95 ++++++++++++++++
+ src/components/ui/separator.tsx      |  31 +++++
+ src/components/user-menu.tsx         |  87 ++++++++++++++
+ 14 files changed, 1221 insertions(+), 3 deletions(-)
+1d93135 21f88944-4058-459f-8a9b-0f8cfcb73c76
+ worklog.md | 43 +++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 43 insertions(+)
+82637a2 Step 3: Supabase client utilities (browser, server, middleware, types, env guard)
+ download/masteranalytics-pro.zip | Bin 81179 -> 87917 bytes
+ src/app/page.tsx                 |   7 +-
+ src/lib/env.ts                   |  35 +++++
+ src/lib/supabase/client.ts       |  40 ++++++
+ src/lib/supabase/middleware.ts   |  85 ++++++++++++
+ src/lib/supabase/server.ts       |  87 ++++++++++++
+ src/middleware.ts                |  25 ++++
+ src/types/database.ts            | 279 +++++++++++++++++++++++++++++++++++++++
+ 8 files changed, 555 insertions(+), 3 deletions(-)
+a9c1582 Add README with download + Vercel deploy instructions; refresh ZIP
+ README.md                        | 184 ++++++++++++++++++++++++++++++++++++++
+ download/README.md               | 185 ++++++++++++++++++++++++++++++++++++++-
+ download/masteranalytics-pro.zip | Bin 76022 -> 81179 bytes
+ 3 files changed, 368 insertions(+), 1 deletion(-)
+241e4cc MasterAnalytics Pro — Steps 1 & 2 complete (project scaffold + SQL schema + RLS)
+ download/masteranalytics-pro.zip | Bin 0 -> 76022 bytes
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+a4acd2b 4ddabeed-ac09-4a34-b960-47929e9db411
+ download/schema.sql | 371 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ package.json        |   2 +-
+ src/app/layout.tsx  |  40 +++++-
+ src/app/page.tsx    |  45 +++++--
+ supabase/schema.sql | 371 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ worklog.md          |  30 +++++
+ 6 files changed, 847 insertions(+), 12 deletions(-)
+b7e1104 c37ea5de-86c0-4749-954a-1b65238aeb5b
+ .env.example                 |   24 +
+ .gitignore                   |   37 +-
+ bun.lock                     | 1126 ++++++++++++++++++++++++++++++++++++++++++
+ components.json              |   21 +
+ eslint.config.mjs            |   22 +
+ next.config.mjs              |   11 +
+ package.json                 |   51 ++
+ postcss.config.mjs           |    6 +
+ src/app/globals.css          |   70 +++
+ src/app/layout.tsx           |   25 +
+ src/app/page.tsx             |   91 ++++
+ src/components/ui/button.tsx |   57 +++
+ src/components/ui/card.tsx   |   83 ++++
+ src/components/ui/input.tsx  |   22 +
+ src/components/ui/label.tsx  |   26 +
+ src/components/ui/sonner.tsx |   26 +
+ src/lib/utils.ts             |   55 +++
+ tailwind.config.ts           |   84 ++++
+ tsconfig.json                |   23 +
+ worklog.md                   |   28 ++
+ 20 files changed, 1887 insertions(+), 1 deletion(-)
+5353ada Initial commit
+ .env               | 1 +
+ .gitignore         | 2 ++
+ download/README.md | 1 +
+ 3 files changed, 4 insertions(+)
