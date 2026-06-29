@@ -59,7 +59,7 @@ export function PdfReportButton({
       const filenameMatch = contentDisp.match(/filename="?([^"]+)"?/);
       const filename = filenameMatch
         ? decodeURIComponent(filenameMatch[1])
-        : `Polio_Campaign_Report_${new Date().toISOString().slice(0, 10)}.pdf`;
+        : `Polio_Campaign_Analysis_Report_${new Date().toISOString().slice(0, 10)}.pdf`;
 
       // Trigger download
       const a = document.createElement("a");

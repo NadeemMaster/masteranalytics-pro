@@ -29,6 +29,7 @@ export const CHART_COLORS = {
 
 // Type for SVG text style (react-pdf SVG Text uses style prop for font properties)
 type SvgTextStyle = {
+  fontFamily?: string;
   fontSize?: number;
   fontWeight?: "normal" | "bold";
   fill?: string;
@@ -76,22 +77,25 @@ export function DayBarChart({ data, width = 500, height = 220 }: DayBarChartProp
     n >= 1000 ? `${(n / 1000).toFixed(0)}K` : String(n);
 
   const titleStyle: SvgTextStyle = {
+    fontFamily: "Inter",
     fontSize: 11,
     fontWeight: "bold",
     fill: CHART_COLORS.slate900,
     textAnchor: "middle",
   };
   const labelStyle: SvgTextStyle = {
+    fontFamily: "Inter",
     fontSize: 7,
     fill: CHART_COLORS.slate500,
     textAnchor: "end",
   };
   const dayLabelStyle: SvgTextStyle = {
+    fontFamily: "Inter",
     fontSize: 8,
     fill: CHART_COLORS.slate700,
     textAnchor: "middle",
   };
-  const legendStyle: SvgTextStyle = { fontSize: 7, fill: CHART_COLORS.slate700 };
+  const legendStyle: SvgTextStyle = { fontFamily: "Inter", fontSize: 7, fill: CHART_COLORS.slate700 };
 
   return (
     <Svg width={width} height={height}>
@@ -212,18 +216,21 @@ export function UcCoverageChart({
     s.length > max ? s.slice(0, max - 1) + "…" : s;
 
   const titleStyle: SvgTextStyle = {
+    fontFamily: "Inter",
     fontSize: 11,
     fontWeight: "bold",
     fill: CHART_COLORS.slate900,
     textAnchor: "middle",
   };
   const ucLabelStyle: SvgTextStyle = {
+    fontFamily: "Inter",
     fontSize: 7,
     fill: CHART_COLORS.slate700,
     textAnchor: "end",
   };
-  const valueStyle: SvgTextStyle = { fontSize: 7, fill: CHART_COLORS.slate900 };
+  const valueStyle: SvgTextStyle = { fontFamily: "Inter", fontSize: 7, fill: CHART_COLORS.slate900 };
   const targetLabelStyle: SvgTextStyle = {
+    fontFamily: "Inter",
     fontSize: 6,
     fill: CHART_COLORS.green,
     textAnchor: "middle",
@@ -331,12 +338,14 @@ export function DonutChart({
   const arcPath = `M ${start.x} ${start.y} A ${innerRadius} ${innerRadius} 0 ${largeArc} 1 ${end.x} ${end.y}`;
 
   const valueStyle: SvgTextStyle = {
+    fontFamily: "Inter",
     fontSize: Math.round(size * 0.16),
     fontWeight: "bold",
     fill: CHART_COLORS.slate900,
     textAnchor: "middle",
   };
   const labelStyle: SvgTextStyle = {
+    fontFamily: "Inter",
     fontSize: 9,
     fill: CHART_COLORS.slate500,
     textAnchor: "middle",
@@ -408,6 +417,7 @@ export function KpiSummaryChart({
       gap: 20,
     },
     title: {
+      fontFamily: "Inter",
       fontSize: 11,
       fontWeight: "bold",
       color: CHART_COLORS.slate900,

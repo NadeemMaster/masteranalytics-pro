@@ -281,7 +281,8 @@ export async function GET(request: NextRequest) {
       .replace(/[^a-zA-Z0-9\-_ ]/g, "")
       .trim()
       .replace(/ /g, "_");
-    const filename = `${safeCampaign}_分析报告_${today}.pdf`;
+    // English-only filename (no CJK)
+    const filename = `${safeCampaign}_Analysis_Report_${today}.pdf`;
 
     // Convert to a Uint8Array and then to a Buffer for NextResponse.
     // Multiple casts needed to satisfy TS's strict ArrayBuffer vs SharedArrayBuffer typing.
