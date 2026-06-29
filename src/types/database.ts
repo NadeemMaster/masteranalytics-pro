@@ -309,6 +309,9 @@ export type CatchupCampaignUpdate = Partial<CatchupCampaignInsert>;
 
 // ----------------------------------------------------------------------------
 //  Database schema (for Supabase generic typing)
+//  NOTE: Supabase's GenericTable requires a `Relationships` array on every
+//  table (empty if no foreign keys). Without it, the type resolves to `never`
+//  and .upsert()/.insert()/.update() reject all inputs.
 // ----------------------------------------------------------------------------
 export interface Database {
   public: {
@@ -317,11 +320,13 @@ export interface Database {
         Row: DailyCampaignRow;
         Insert: DailyCampaignInsert;
         Update: DailyCampaignUpdate;
+        Relationships: [];
       };
       catchup_campaign_data: {
         Row: CatchupCampaignRow;
         Insert: CatchupCampaignInsert;
         Update: CatchupCampaignUpdate;
+        Relationships: [];
       };
     };
     Views: {
@@ -344,6 +349,7 @@ export interface Database {
           created_at: string;
           updated_at: string;
         };
+        Relationships: [];
       };
       v_uc_summary: {
         Row: {
@@ -363,6 +369,7 @@ export interface Database {
           day4_total_coverage: number;
           day4_still_missed: number;
         };
+        Relationships: [];
       };
     };
     Functions: {
@@ -372,6 +379,7 @@ export interface Database {
       };
     };
     Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 }
 
