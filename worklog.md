@@ -154,3 +154,124 @@ Stage Summary:
 - Password strength meter + show/hide toggle for better UX.
 - /dashboard placeholder ensures post-login redirect doesn't 404 — will be replaced by full dashboard in Step 6.
 - Next: Step 5 — File Upload UI + /api/upload route with `*`/empty/NA → 0 cleaning logic + cumulative Day 1-3 upsert (Day 2 replaces Day 1 for same UC).
+
+---
+Task ID: 5
+Agent: main (Super Z)
+Task: Step 5 — File Upload UI + /api/upload route with * cleaning logic + cumulative-replace upsert
+
+Work Log:
+- Re-inspected both Excel files to extract exact column names (55 daily, 42 catchup). Documented tricky cases: "Over all \nTarget" (newline), "Admin Coverage" vs "Admin Coverage %" (need % disambiguation), "MMP Registration:" (trailing colon), "0/0 Houses" (special chars), "UC name" (daily) vs "UC" (catchup), "MMP missed children FROM EXISITING REGISTRATION:" (Excel typo preserved).
+- Created `src/lib/excel/normalize.ts`:
+  * `normalizeHeader()` — lowercases, strips ALL whitespace (handles newlines), removes every char except word chars + % (preserves % for disambiguation)
+  * `buildHeaderIndex()` — builds Map<normalizedHeader, columnIndex> for O(1) lookup
+- Created `src/lib/excel/column-maps.ts`:
+  * `DAILY_COLUMN_MAP` (50 entries) — normalized Excel header → DB column for all 50 daily fields
+  * `CATCHUP_COLUMN_MAP` (40 entries) — normalized Excel header → DB column for all 40 catchup fields
+  * `DAILY_REQUIRED` / `CATCHUP_REQUIRED` — minimum columns that must be present
+- Created `src/lib/excel/parser.ts` — core parsing engine:
+  * `parseExcelFile(fileBuffer, fileName)` → `ParseSummary`
+  * Reads via SheetJS (XLSX.read with type:"array"), prefers "lqp" sheet name
+  * Reads `Campaign Day` column FIRST to route rows → daily (Days 1-3) or catchup (Day 4)
+  * `mapRow()` applies `toCleanString` for string fields (tehsil, uc_name, campaign_name), `toNumber` for numeric fields (treats *, empty, NA, N/A, - as 0), preserves `raw_data` JSONB with original cell values
+  * Validates required identifier fields (tehsil, campaign_name, uc_name) — rows missing these go to errors[]
+  * Returns: dailyRows[], catchupRows[], skipped[] (missing day / unexpected day), errors[] (missing required fields), unmappedHeaders[] (diagnostics)
+- Created `src/app/api/upload/route.ts` — POST handler:
+  * Authenticates via `getUser()` — 401 if not signed in
+  * Validates: multipart form data, file present, .xlsx/.xls extension, ≤10MB
+  * Reads ArrayBuffer, calls `parseExcelFile()`
+  * Upserts daily rows with `onConflict: 'user_id,campaign_name,tehsil,uc_name'` — this ENFORCES the cumulative-replace rule (Day 2 REPLACES Day 1 for same UC because campaign_day is NOT in the conflict key)
+  * Upserts catchup rows with same conflict pattern
+  * user_id injected from session (never from request body — RLS validates)
+  * Returns structured JSON: { success, fileName, sheetName, totalRows, daily: {parsed, upserted, error}, catchup: {...}, skipped[], rowErrors[], unmappedHeaders[], message }
+  * HTTP 207 on partial errors, 200 on full success
+- Created `src/components/ui/badge.tsx` — shadcn Badge with success/warning/info variants.
+- Created `/upload` page (`src/app/upload/page.tsx`) — Server Component shell with branded header, breadcrumb, info banner explaining cumulative-replace + * → 0 cleaning.
+- Created `src/app/upload/upload-form.tsx` — Client Component:
+  * Drag-and-drop zone + click-to-browse (hidden file input)
+  * File validation (extension, size) with toast errors
+  * Upload progress bar (10% → 30% → 80% → 100%)
+  * Results card: success/warning color-coded, 4-stat grid (total rows / daily upserted / catchup upserted / skipped+errors), table-level error display, unmapped headers as badges
+  * Skipped rows table (Excel row # + reason) — max height 64 with scroll
+  * Error rows table (same format)
+  * "Upload another" + "Go to Dashboard" buttons
+- Updated `/dashboard` placeholder: Step 5 card now shows "Ready" (green), CTA button links to /upload (was disabled).
+- Updated landing page progress tracker (Step 5 marked complete).
+- Fixed Supabase generic type resolution issue:
+  * Added `Relationships: []` to every table + view in `Database` interface (required by GenericTable/GenericView constraint)
+  * Added `CompositeTypes: Record<string, never>` to schema (required by GenericSchema)
+  * Refactored `DailyCampaignInsert` and `CatchupCampaignInsert` from `Omit<Row, ...>` to explicit object types with optional fields (matching Supabase Insert convention — fields with DB defaults are optional)
+  * Applied `as never` cast at upsert boundary (pragmatic workaround for @supabase/ssr generic resolution; data remains type-safe at parser level)
+- Verified: `bun run lint` → ✔ No ESLint warnings or errors; `bunx tsc --noEmit` → exit 0.
+- Refreshed `download/masteranalytics-pro.zip` (121 KB) with all Step 5 files.
+- Committed: "Step 5: Excel parser + /api/upload route + /upload UI (drag-drop, per-row status, cumulative-replace upsert)".
+
+Stage Summary:
+- Complete upload pipeline: .xlsx → SheetJS parse → header normalization → value cleaning (* → 0) → typed DB rows → Supabase upsert with cumulative-replace.
+- Critical logic enforced: Day 2 upload REPLACES Day 1 for same UC (unique constraint excludes campaign_day, upsert overwrites all columns).
+- Day 4 rows auto-routed to catchup_campaign_data table.
+- Full traceability: raw_data JSONB preserves original cell values; unmappedHeaders reported; skipped/error rows listed with Excel row numbers.
+- RLS-safe: user_id from session, never from request.
+- User can now sign up → log in → upload Day 1-4 Excel files → data lands in correct tables.
+- Next: Step 6 — Dashboard UI with Filters, KPI Cards, Recharts charts.
+
+---
+Task ID: 6
+Agent: full-stack-developer
+Task: Step 6 — Dashboard UI with Filters, KPI Cards & Recharts
+
+Work Log:
+- Read worklog.md to confirm Steps 1-5 infrastructure (Supabase clients, types, RLS, upload pipeline, landing page credits). Inspected existing UI primitives (button/card/badge/avatar/dropdown-menu/separator/input/label/sonner/password-input) and `src/types/database.ts` to align with existing conventions.
+- Created 5 new shadcn UI primitives in `src/components/ui/`:
+  * `select.tsx` — Radix Select (Trigger/Content/Item/Group/Value/Label/Separator + scroll buttons).
+  * `tabs.tsx` — Radix Tabs (Tabs/TabsList/TabsTrigger/TabsContent).
+  * `table.tsx` — standard shadcn table (Table/TableHeader/TableBody/TableRow/TableHead/TableCell/TableFooter/TableCaption) with hover + scroll wrapper.
+  * `progress.tsx` — Radix Progress with custom `indicatorClassName` prop so we can theme the bar per KPI.
+  * `skeleton.tsx` — `animate-pulse` skeleton primitive for loading states.
+- Created `src/lib/dashboard/aggregate.ts` — shared aggregation helper (used by both the Server Component and the API route so the initial render is server-side):
+  * `DashboardFilters` type (campaign/tehsil/uc/day).
+  * `DayFilter = '1'|'2'|'3'|'4'|'all'`.
+  * `DashboardKpis`, `DayBreakdownRow`, `UcBreakdownRow`, `DashboardRow`, `DashboardData`, `FilterOptions` interfaces.
+  * `buildFilterOptions()` — dedupes identifier rows into campaigns / tehsils-by-campaign / UCs-by-campaign+tehsil / distinct days.
+  * `fetchDashboardData()` — runs daily + catchup `.select()` in parallel with `.eq('user_id', userId)` plus optional campaign/tehsil/uc/day filters; aggregates KPIs (Total Target, OPV Covered, Coverage %, Missed Children, Refusals, Teams Reported), day-by-day breakdown (1-4), UC-wise breakdown (coverage % per UC sorted desc), and a capped raw-rows list (100 rows). Coverage % is computed from `opv_given/over_all_target*100` (unambiguous — never relies on the possibly-ambiguous `admin_coverage_pct` column).
+  * `fetchCampaignKpis()` — single-campaign KPIs for the comparison view.
+  * Used `Awaited<ReturnType<typeof createClient>>` for the Supabase client type (avoids the generic-resolution issue noted in Step 5 with the `SupabaseClient<Database>` alias that omits the schema-name generic).
+- Created `src/app/api/dashboard-data/route.ts` — GET handler. Auth via `getUser()`, parses query params (campaign/tehsil/uc/day with day defaulted to 'all' and validated against the allowed set), calls `fetchDashboardData()`, returns `{ success, filters, kpis, dayBreakdown, ucBreakdown, rows }`. RLS handles ownership; explicit `.eq('user_id')` is also added.
+- Created `src/app/api/campaign-comparison/route.ts` — GET handler taking `current` + `previous` campaign names, returns both campaigns' KPIs via `fetchCampaignKpis()`.
+- Created `src/components/dashboard/filter-bar.tsx` — Client Component with cascading shadcn Select dropdowns (Campaign → Tehsil → UC, plus Day 1/2/3/4/All). Tehsil dropdown is disabled until a campaign is picked, UC dropdown is disabled until a tehsil is picked. Includes Apply Filters + Reset buttons and a "Filters active" hint. Uses `useTransition` so the parent can mark the refresh as non-urgent.
+- Created `src/components/dashboard/kpi-cards.tsx` — 6 KPI cards (Total Target, OPV Covered, Coverage %, Missed Children, Refusals, Teams Reported). Each card has a Lucide icon (Target/Syringe/Percent/AlertTriangle/Ban/Users), big formatted number (`formatNumber()`), color-coded tone (blue/cyan/green/amber/red/purple), and a subtle ring + hover shadow. Coverage % card shows a Progress bar colored by performance tier (≥95 green / ≥80 blue / ≥60 amber / else red). Missed & Refusal cards also tone-shift based on magnitude. Exports `KpiCardsSkeleton` for loading states.
+- Created `src/components/dashboard/charts.tsx` — three Recharts visualizations using `hsl(var(--chart-1..5))` palette:
+  * `DayByDayChart` — vertical BarChart of OPV / Missed / Refusals across Days 1-4 with legend + tooltip.
+  * `UcCoverageChart` — horizontal BarChart showing bottom-10 UCs by coverage % (lowest first), color-coded per cell (red<60 / amber<80 / blue<95 / green≥95), with reference lines at 80% and 95%.
+  * `CoverageVsTargetChart` — ComposedChart for top-10 UCs by target: target bar (grey), OPV area gradient (blue), coverage % line (purple, secondary right axis).
+  * Each chart has an empty-state fallback ("No data for the selected filters.") and `ChartsSkeleton` for transitions.
+- Created `src/components/dashboard/campaign-comparison.tsx` — Client Component with two campaign Select pickers + Compare button. Calls `/api/campaign-comparison`, renders a 5-column table (Metric | Current | Previous | Variance | Variance %) for 6 metrics. Variance is color-coded green/red with TrendingUp/TrendingDown icons based on whether the change is in the desired direction (e.g. fewer refusals = green). Shows a "need at least 2 campaigns" placeholder when the user has only 1 campaign.
+- Created `src/components/dashboard/dashboard-client.tsx` — Client orchestrator that holds filter + data state. Receives server-rendered `initialData` so the first paint is instant; on Apply/Reset it calls `/api/dashboard-data` via `fetch()` inside `useTransition` (shows `KpiCardsSkeleton`/`ChartsSkeleton` during the transition). Renders FilterBar, active-filter chip row, error banner with Retry, KPI cards, the three charts, a scrollable raw-rows table (max-h-96 with sticky header), and the CampaignComparison card. Footer note reminds the user that RLS scopes data to their account.
+- REPLACED `src/app/dashboard/page.tsx` — Server Component that:
+  * Calls `requireUser()` (redirects to /login if not signed in).
+  * Fetches identifier rows (campaign_name/tehsil/uc_name/campaign_day) from both daily + catchup tables in parallel and builds `FilterOptions` via `buildFilterOptions()`.
+  * If `filterOptions.campaigns.length === 0`, renders an `EmptyState` CTA card linking to /upload with a "What you'll get" list and the user's email.
+  * Otherwise fetches initial aggregated data via `fetchDashboardData()` and renders `<DashboardClient>` with that initial data + initial filters (all/unfiltered).
+  * Branded sticky header (logo + "Dashboard" badge + Upload button + UserMenu), title row with campaign/tehsil counts, and a 3-card next-steps strip (Upload more, Re-fetch, AI Insights coming soon).
+- Updated `src/app/page.tsx` landing page progress tracker:
+  * Badge text now reads "Step 6 Complete — Dashboard UI + Charts Ready".
+  * Step 6 marked with ✓ (green) in the Build Progress list.
+- Fixed type issues found during `bunx tsc --noEmit`:
+  * The `SupabaseClient` alias in `src/types/database.ts` is missing the schema-name generic that newer `@supabase/supabase-js` requires — resolved in `aggregate.ts` by deriving the type as `Awaited<ReturnType<typeof createClient>>` instead of importing the alias. Did NOT modify `src/types/database.ts` (per task constraints).
+  * `EmptyState` was being passed `user.email` (string | undefined) — changed to `user.email ?? "user"`.
+- Fixed a bug in `campaign-comparison.tsx` useEffect: the second `setPrevious(...)` call was mistakenly calling `setCurrent(...)`.
+- Verified: `bunx tsc --noEmit` → exit 0 (no errors); `bun run lint` → ✔ No ESLint warnings or errors.
+
+Stage Summary:
+- Full dashboard live at `/dashboard`: server-rendered first paint (instant KPIs + charts on initial load) with client-side filter refetches.
+- 6 KPI cards with real data from the user's uploaded campaigns (Total Target, OPV Covered, Coverage %, Missed Children, Refusals, Teams Reported) — color-coded by performance tier.
+- Cascading filters (Campaign → Tehsil → UC, plus Day 1/2/3/4/All) with Apply + Reset buttons and active-filter chips.
+- 3 Recharts visualizations: Day-by-day bar, UC-wise horizontal bar (bottom-10 by coverage %), Composed coverage-vs-target chart (top-10 by target).
+- Side-by-side Campaign Comparison view with variance % table and color-coded trend indicators.
+- Scrollable raw-rows table (max 100 rows, sticky header) showing per-UC breakdown.
+- Friendly empty state with CTA → /upload when the user has no data.
+- Loading skeletons for both KPI cards and charts during filter transitions.
+- Fully responsive (mobile-stacked → desktop grids), professional palette (blue/cyan/green/amber/red — no indigo), accessible (Labels, semantic HTML, keyboard-navigable Selects).
+- Files created (12): `src/components/ui/{select,tabs,table,progress,skeleton}.tsx`, `src/lib/dashboard/aggregate.ts`, `src/app/api/dashboard-data/route.ts`, `src/app/api/campaign-comparison/route.ts`, `src/components/dashboard/{filter-bar,kpi-cards,charts,campaign-comparison,dashboard-client}.tsx`.
+- Files modified (2): `src/app/dashboard/page.tsx` (replaced placeholder with full dashboard), `src/app/page.tsx` (progress tracker updated).
+- Next: Step 7 — Groq LLaMA-3 AI Insights on top of the aggregated dashboard data.

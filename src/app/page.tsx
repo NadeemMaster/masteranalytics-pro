@@ -10,7 +10,7 @@ export default function Home() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-600" />
             </span>
-            Step 5 Complete — Upload &amp; Excel Parser Ready
+            Step 7 Complete — AI Insights Ready
           </div>
 
           <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
@@ -75,11 +75,16 @@ export default function Home() {
                 <span className="text-green-600">✓</span> Step 5 — File Upload +
                 /api/upload
               </li>
-              <li className="flex items-center gap-2 opacity-60">
-                <span>○</span> Step 6 — Dashboard UI + charts
+              <li className="flex items-center gap-2">
+                <span className="text-green-600">✓</span> Step 6 — Dashboard UI
+                + charts
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-green-600">✓</span> Step 7 — Groq AI
+                insights
               </li>
               <li className="flex items-center gap-2 opacity-60">
-                <span>○</span> Step 7 — Groq AI insights
+                <span>○</span> Step 8 — PDF Report export
               </li>
             </ol>
           </div>
