@@ -10,7 +10,7 @@
 
 import {
   Target,
-  Syringe,
+  Droplet,
   Percent,
   AlertTriangle,
   Ban,
@@ -88,18 +88,18 @@ function KpiCard({
   return (
     <Card
       className={cn(
-        "overflow-hidden transition-shadow hover:shadow-md",
+        "h-full overflow-hidden transition-shadow hover:shadow-md",
         "ring-1 ring-inset",
         styles.ring
       )}
     >
-      <CardContent className="p-4 sm:p-5">
+      <CardContent className="flex h-full flex-col p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
               {label}
             </p>
-            <p className="mt-2 truncate text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            <p className="mt-2 text-xl font-bold tabular-nums leading-tight tracking-tight text-slate-900 sm:text-2xl">
               {display ?? formatNumber(value)}
             </p>
             {hint ? (
@@ -116,7 +116,7 @@ function KpiCard({
           </div>
         </div>
         {typeof progress === "number" ? (
-          <div className="mt-3">
+          <div className="mt-auto pt-3">
             <Progress
               value={progress}
               indicatorClassName={styles.bar}
@@ -167,11 +167,11 @@ export function KpiCards({ kpis }: KpiCardsProps) {
         hint="Children targeted"
       />
       <KpiCard
-        icon={Syringe}
-        label="OPV Issued"
-        value={kpis.opvIssued}
+        icon={Droplet}
+        label="Admin Coverage"
+        value={kpis.adminCoverage}
         tone="cyan"
-        hint="Vaccine issued (wastage/utilization)"
+        hint="Children vaccinated"
       />
       <KpiCard
         icon={Percent}

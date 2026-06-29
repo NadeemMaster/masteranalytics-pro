@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 //  MasterAnalytics Pro — Dashboard Page (Server Component)
 //  - Authenticates via requireUser()
 //  - Fetches initial filter options + aggregated data server-side
@@ -15,7 +15,6 @@ import {
   Database,
   FileSpreadsheet,
   RefreshCw,
-  Sparkles,
   Upload,
 } from "lucide-react";
 
@@ -159,31 +158,6 @@ export default async function DashboardPage() {
             }}
           />
         )}
-
-        {/* Next-steps strip */}
-        <div className="mt-8 grid gap-3 sm:grid-cols-3">
-          <NextStepCard
-            icon={Upload}
-            title="Upload more reports"
-            desc="Days 1–3 are cumulative (latest replaces previous). Day 4 goes to catch-up."
-            href="/upload"
-            cta="Go to Upload"
-            tone="blue"
-          />
-          <NextStepCard
-            icon={BarChart3}
-            title="Re-fetch dashboard"
-            desc="Use the Reset button above to clear filters and view all your data."
-            tone="slate"
-          />
-          <NextStepCard
-            icon={Sparkles}
-            title="AI Insights (coming soon)"
-            desc="Step 7 will add Groq LLaMA-3 powered narrative insights on top of the charts."
-            tone="amber"
-            disabled
-          />
-        </div>
       </main>
     </div>
   );
@@ -255,58 +229,6 @@ function EmptyState({ email }: { email: string }) {
             </p>
           </div>
         </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-// ---------------------------------------------------------------------------
-//  Next-step card
-// ---------------------------------------------------------------------------
-
-interface NextStepCardProps {
-  icon: typeof Upload;
-  title: string;
-  desc: string;
-  href?: string;
-  cta?: string;
-  tone: "blue" | "slate" | "amber";
-  disabled?: boolean;
-}
-
-function NextStepCard({
-  icon: Icon,
-  title,
-  desc,
-  href,
-  cta,
-  tone,
-  disabled,
-}: NextStepCardProps) {
-  const toneClasses =
-    tone === "blue"
-      ? "border-blue-200 bg-blue-50/50 text-blue-700"
-      : tone === "amber"
-        ? "border-amber-200 bg-amber-50/50 text-amber-700"
-        : "border-slate-200 bg-white text-slate-700";
-
-  return (
-    <Card className={toneClasses}>
-      <CardContent className="flex h-full flex-col gap-2 p-4">
-        <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4" />
-          <h4 className="text-sm font-semibold">{title}</h4>
-        </div>
-        <p className="flex-1 text-xs text-slate-600">{desc}</p>
-        {href && cta ? (
-          <Button asChild variant="outline" size="sm" className="self-start">
-            <Link href={href}>{cta}</Link>
-          </Button>
-        ) : disabled ? (
-          <span className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-            Coming soon
-          </span>
-        ) : null}
       </CardContent>
     </Card>
   );

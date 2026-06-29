@@ -44,27 +44,6 @@ export function Footer() {
             </div>
           </div>
         </div>
-
-        {/* Bottom bar */}
-        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-slate-200 pt-6 text-center sm:flex-row sm:text-left">
-          <p className="text-sm text-slate-500">
-            <span className="font-semibold text-slate-700">
-              MasterAnalytics Pro
-            </span>{" "}
-            — Polio Campaign Analytics
-          </p>
-          <p className="text-sm text-slate-500">
-            Developed by{" "}
-            <a
-              href="https://www.facebook.com/itxmasterjee"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-semibold text-blue-600 underline-offset-2 hover:underline"
-            >
-              M. Nadeem Akhtar
-            </a>
-          </p>
-        </div>
       </div>
     </footer>
   );
