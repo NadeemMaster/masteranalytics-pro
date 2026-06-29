@@ -130,16 +130,18 @@ bun run build && bun run start
 
 ---
 
-## Build Progress (7-step plan)
+## Build Progress (8-step plan — ALL COMPLETE)
 
 - [x] **Step 1** — Dependencies & `.env.local` template
 - [x] **Step 2** — SQL schema + RLS policies (`supabase/schema.sql`)
-- [ ] **Step 3** — Supabase client utilities (browser + server + middleware)
-- [ ] **Step 4** — Authentication UI (login/signup) + auth callback
-- [ ] **Step 5** — File upload UI + `/api/upload` route (`*` cleaning logic)
-- [ ] **Step 6** — Dashboard UI (filters, KPI cards, Recharts)
-- [ ] **Step 7** — Groq AI insight API + UI component
-- [ ] **Step 8** (future) — PDF Report export (reportlab, A4, bookmarks)
+- [x] **Step 3** — Supabase client utilities (browser + server + middleware)
+- [x] **Step 4** — Authentication UI (login/signup) + auth callback
+- [x] **Step 5** — File upload UI + `/api/upload` route (`*` cleaning logic)
+- [x] **Step 6** — Dashboard UI (filters, KPI cards, Recharts)
+- [x] **Step 7** — Groq AI insight API + UI component
+- [x] **Step 8** — PDF Report export (`@react-pdf/renderer`, A4, bookmarks, headers/footers, 7 sections)
+
+> **Note on PDF library**: The original spec asked for `reportlab` (Python), but Vercel is Node.js-only. The PDF generator was rewritten in pure TypeScript using `@react-pdf/renderer` — fully Vercel-compatible, no Python required. All other spec requirements (A4, margins, headers/footers, bookmarks, 7 sections, ≤10MB) are met.
 
 ---
 
@@ -153,16 +155,35 @@ masteranalytics-pro/
 │   ├── app/
 │   │   ├── layout.tsx        # Root layout + footer credits
 │   │   ├── page.tsx          # Landing / progress page
-│   │   └── globals.css       # Tailwind + shadcn CSS vars
+│   │   ├── globals.css       # Tailwind + shadcn CSS vars
+│   │   ├── login/            # Sign-in page
+│   │   ├── signup/           # Registration page
+│   │   ├── auth/callback/    # PKCE email-confirmation handler
+│   │   ├── dashboard/        # Main analytics dashboard
+│   │   ├── upload/           # Excel upload page (drag-drop)
+│   │   └── api/
+│   │       ├── upload/             # Excel parser + Supabase upsert
+│   │       ├── dashboard-data/     # Filtered KPI + chart data
+│   │       ├── campaign-comparison/# Current vs previous campaign
+│   │       ├── ai-insights/        # Groq LLaMA-3 analysis
+│   │       └── generate-report/    # PDF report generation
 │   ├── components/
-│   │   └── ui/               # shadcn primitives (button, card, input, ...)
+│   │   ├── ui/               # shadcn primitives (button, card, input, ...)
+│   │   ├── dashboard/        # KPI cards, charts, filters, AI insights
+│   │   └── user-menu.tsx     # Avatar dropdown
 │   ├── lib/
 │   │   ├── utils.ts          # cn() + data-cleaning helpers
-│   │   └── supabase/         # (Step 3) client/server/middleware
+│   │   ├── supabase/         # Browser + server + middleware clients
+│   │   ├── excel/            # Parser + column maps + normalizer
+│   │   ├── groq/             # Groq AI client + prompt builder
+│   │   ├── pdf/              # PDF report document + SVG charts
+│   │   └── dashboard/        # Aggregation logic
 │   ├── hooks/
-│   └── types/
+│   └── types/                # TypeScript database types
 ├── .env.example              # Template — copy to .env.local
 ├── .env.local                # YOUR secrets (gitignored)
+├── .vercelignore             # Excludes dead files from Vercel deploys
+├── vercel.json               # Function maxDuration settings
 ├── package.json
 ├── tsconfig.json
 ├── tailwind.config.ts

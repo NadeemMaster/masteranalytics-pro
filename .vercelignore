@@ -1,0 +1,32 @@
+# Files excluded from Vercel deployments to reduce bundle size.
+# These are NOT needed on Vercel — the PDF generator is pure TypeScript.
+
+# Dead Python report generator (replaced by src/lib/pdf/)
+scripts/
+
+# Dead font file (was for Python reportlab; @react-pdf/renderer uses built-in Helvetica)
+fonts/
+
+# Local download artifacts
+download/
+
+# Upload directory (local dev only)
+upload/
+
+# Skills reference directory (not part of the app)
+skills/
+
+# Documentation
+*.md
+!README.md
+
+# Database
+db/
+
+# IDE / OS
+.git/
+.gitignore
+.eslintrc*
+
+# Lockfiles (Vercel regenerates these)
+bun.lock

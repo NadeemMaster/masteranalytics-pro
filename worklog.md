@@ -400,3 +400,67 @@ Stage Summary:
   6. ✅ Dashboard UI (filters, KPI cards, Recharts charts, campaign comparison)
   7. ✅ Groq AI insights (LLaMA-3.3-70B, structured JSON, styled cards)
   8. ✅ PDF Report export (reportlab, A4, 7 sections, bookmarks, headers/footers)
+
+---
+Task ID: Audit-1
+Agent: general-purpose
+Task: Vercel + Supabase compatibility audit
+
+Work Log:
+- Read `worklog.md` to understand 8-step build history (Steps 1-8 complete per worklog, but README progress checklist still shows Steps 3-8 as `[ ]` — stale doc).
+- Inspected all 4 API routes (`/api/dashboard-data`, `/api/campaign-comparison`, `/api/ai-insights`, `/api/generate-report`) + `/auth/callback` — checked runtime, maxDuration, child_process usage, fs usage, service_role usage.
+- Verified the PDF generation migration: `src/app/api/generate-report/route.ts` uses `@react-pdf/renderer`'s `renderToBuffer` — NO `child_process.spawn`, NO Python invocation anywhere in `src/`. The original `scripts/report/generate_report.py` (813 lines) and `fonts/simhei.ttf` (9.4MB) still exist on disk but are NOT referenced by any code in `src/` (only mentioned in `worklog.md` history).
+- Searched entire `src/` for `writeFile`, `writeFileSync`, `mkdir`, `mkdirSync`, `readFile`, `readFileSync`, `/tmp`, `process.cwd()` → ZERO matches. No filesystem writes anywhere; the app is fully stateless and Vercel-ready.
+- Searched `src/` for `child_process|spawn|exec\(|execSync|python|reportlab|matplotlib|generate_report\.py` → only 3 hits, all in COMMENTS (`pdf-report-button.tsx:6`, `charts.tsx:4`, `generate-report/route.ts:7`). No executable Python dependency.
+- Verified `package.json` deps: no `sharp`, no `canvas`, no `bcrypt` (uses `bcryptjs`? — actually no password hashing at all, auth goes through Supabase). All deps are pure JS: `@react-pdf/renderer`, `@supabase/ssr`, `groq-sdk`, `xlsx` (CDN tarball), `recharts`, `sonner`, Radix primitives. Confirmed via `bun pm ls` (595 packages, all JS).
+- Verified Supabase integration:
+  * `src/lib/supabase/client.ts` (browser) — singleton, PKCE flow, correct.
+  * `src/lib/supabase/server.ts` (server) — uses async `cookies()` from `next/headers`, swallows `setAll` errors in Server Components (correct pattern — middleware refreshes instead).
+  * `src/lib/supabase/middleware.ts` — uses `getUser()` (NOT `getSession()` — secure), refreshes cookies correctly via response.cookies.set.
+  * `src/app/auth/callback/route.ts` — correct PKCE `exchangeCodeForSession(code)` with open-redirect guard on `next` param.
+  * `supabase/schema.sql` — RLS enabled on both tables, 8 policies (SELECT/INSERT/UPDATE/DELETE × 2 tables) all use `auth.uid() = user_id`. No `service_role` usage in any user-facing route.
+- Verified `src/lib/env.ts` declares `supabaseServiceRoleKey` but it's DEAD CODE — grep shows no `import ... from "@/lib/env"` anywhere. Safe.
+- Verified all API routes also add explicit `.eq("user_id", user.id)` on top of RLS — defense-in-depth, correct.
+- Ran `bunx tsc --noEmit` → exit 0 (no type errors).
+- Ran `bun run lint` → ✔ No ESLint warnings or errors.
+- Verified env files: `.env.example` is complete (5 vars documented); `.env.local` and `.env` exist but contain only placeholder `YOUR-...` values; `.env` also has a stray `DATABASE_URL=file:/home/z/my-project/db/custom.db` (hardcoded Linux path, unused — no Prisma/SQLite in deps).
+
+Findings:
+- ✅ **All 4 API routes are Vercel-compatible** (`runtime = "nodejs"`, no child_process, no fs writes, no native modules, `dynamic = "force-dynamic"`).
+- ✅ **PDF generation fully migrated** to `@react-pdf/renderer` — works on Vercel. No `child_process.spawn`, no `reportlab`, no `matplotlib`, no SimHei font loading at runtime.
+- ✅ **Supabase integration is production-correct** — PKCE flow, secure session refresh via `getUser()` not `getSession()`, RLS enforced at DB level + explicit `.eq("user_id")` in queries, no service_role in user paths.
+- ✅ **No native modules** in `package.json`. `@react-pdf/renderer` is pure JS.
+- ✅ **`vercel.json` is valid** with correct function-path keys (`src/app/api/.../route.ts`) and reasonable `maxDuration` values (60s PDF, 30s AI/upload).
+- ✅ **`next.config.mjs`** only uses `experimental.serverActions.bodySizeLimit: "10mb"` — supported on Vercel.
+- ✅ **tsc + lint clean** — code is type-safe and lint-clean.
+
+- ❌ **CRITICAL: `/upload` page is missing.** `src/app/dashboard/page.tsx` has 3 `<Link href="/upload">` CTAs (lines 113, 169, 248) and `src/middleware.ts` lists `/upload` in `PROTECTED_PREFIXES`, but `src/app/upload/` does not exist. Clicking "Upload" → 404. This breaks the app's primary upload-then-visualize flow on any deployment (Vercel or otherwise).
+- ❌ **CRITICAL: `/api/upload` route is missing.** `vercel.json` line 10-12 declares `maxDuration: 30` for `src/app/api/upload/route.ts` — but that file does not exist. `src/lib/excel/{parser,normalize,column-maps}.ts` exist as orphaned code. `vercel.json` references a nonexistent route (Vercel will silently ignore it, but the Excel upload pipeline never works). README still lists Step 5 as `[ ]` (acknowledging this gap).
+- ❌ **CRITICAL: `.env.local` has placeholder values** (`YOUR-PROJECT-ref.supabase.co`, `YOUR-SUPABASE-ANON-PUBLIC-KEY`, `YOUR-GROQ-API-KEY`). Must be replaced with real Supabase + Groq credentials before `git push` to Vercel, or every API route will throw "Missing NEXT_PUBLIC_SUPABASE_URL" at runtime. (Vercel reads env vars from its dashboard, not from `.env.local` — so the fix is to add real values in Vercel Project Settings → Environment Variables. The `.env.example` template is correct and ready to copy.)
+
+- ⚠️ **Dead files inflate Vercel deployment**: `fonts/simhei.ttf` (9.4 MB) + `scripts/report/generate_report.py` (36 KB) + `download/masteranalytics-pro.zip` (332 KB) + `download/NID_FEB_2026_分析报告_2026-06-29.pdf` + `download/charts/*.png` are bundled into every deployment but never used by `src/`. Vercel's deployment size limit is 100 MB uncompressed (well under) and 50 MB per serverless function compressed — these files don't break the build, but they slow it down and waste bandwidth on every `git push`. Recommend adding them to `.vercelignore` (or moving to `download/` only and removing from the deployable repo).
+- ⚠️ **`vercel.json` references a phantom `/api/upload` route** — harmless (Vercel ignores unknown paths) but misleading. Should be removed once `/api/upload` is either built or the upload flow is dropped.
+- ⚠️ **`src/lib/env.ts` is unused dead code** that reads `SUPABASE_SERVICE_ROLE_KEY`. Confusing — makes auditors think service_role is used somewhere. Recommend deleting the file or wiring it up to a startup-time env validation call.
+- ⚠️ **`src/lib/excel/{parser,normalize,column-maps}.ts` (504 lines) are orphaned** — were written for Step 5 but never wired to an API route. Dead code, but harmless on Vercel.
+- ⚠️ **`.env` contains `DATABASE_URL=file:/home/z/my-project/db/custom.db`** — hardcoded Linux path that won't exist on Vercel. Not read by any code (no Prisma/SQLite), but `process.env.DATABASE_URL` will be set to a bad value at runtime. Recommend deleting the line.
+- ⚠️ **PDF function timeout risk on Vercel Hobby plan**: `/api/generate-report` does Supabase fetch + Groq LLM call + `@react-pdf/renderer` render sequentially. `maxDuration: 60` (set in both `vercel.json` and inline `export const maxDuration = 60`) is the Hobby plan ceiling — Pro plan allows up to 300s. If Groq is slow + dataset is large, the request can 504. Recommend either upgrading to Pro or pre-caching AI insights (call `/api/ai-insights` separately first, then pass to a simpler PDF route).
+- ⚠️ **`maxDuration` set inconsistently**: `generate-report/route.ts` sets `maxDuration = 60` inline AND `vercel.json` sets 60 — fine, they match. But `ai-insights/route.ts` does NOT set it inline; only `vercel.json` sets 30s. Not a bug (vercel.json wins) but inconsistent style.
+- ⚠️ **PDF body uses Helvetica only** — no CJK font registered (the `simhei.ttf` file is on disk but `@react-pdf/renderer` does not load it). The PDF filename contains `分析报告` (Chinese chars), which works via `Content-Disposition` with UTF-8 encoding (`filename*=UTF-8''...`), but Chinese text inside the PDF body would render as boxes. For this project's data (English + Pakistan place names), this is acceptable. If Chinese body text is needed later, register SimHei via `Font.register({ family: 'SimHei', src: '/fonts/simhei.ttf' })` — but `@react-pdf/renderer` fetches fonts via URL and Vercel serves files in `public/`, so the font would need to move from `fonts/` to `public/fonts/` first.
+- ⚠️ **README.md is stale**: "Build Progress" section lists Steps 3-8 as `[ ]` and Step 8 as "(future) — PDF Report export (reportlab, ...)". The landing page (`src/app/page.tsx`) and worklog say all 8 steps are complete. Doc/UX inconsistency — fix the README before sharing with end users.
+- ⚠️ **PDF spec conflict (informational)**: The original Step 8 spec mandated `reportlab` (Python) + SimHei + matplotlib. The current implementation uses `@react-pdf/renderer` (pure JS) + Helvetica + SVG charts. This deviates from the literal spec but is the ONLY way to run on Vercel (Vercel serverless functions are Node.js-only; `@vercel/python` is deprecated and only handles simple WSGI/ASGI apps, not subprocess spawning from Next.js routes). The PDF output still satisfies the substantive requirements: A4, 2.5cm/2cm margins, header (right-aligned, 10pt, excluded on cover), footer (page X of Y centered, excluded on cover), Heading 1/2/3 hierarchy, 7 sections, ≤10MB file size, vector charts (effectively infinite DPI).
+
+Stage Summary:
+- **Vercel compatibility: ✅ PASS** — The Next.js app as written is fully Vercel-compatible. No Python subprocess, no fs writes outside `/tmp`, no native modules, no edge-runtime incompatibilities, correct `runtime`/`dynamic`/`maxDuration` exports, valid `vercel.json`, RLS-safe Supabase queries, PKCE auth flow. `bunx tsc --noEmit` and `bun run lint` both pass clean.
+- **Functional completeness: ❌ NOT DEPLOYABLE AS-IS** — Two critical gaps block the user-facing flow on Vercel (or any host):
+  1. `/upload` page missing → "Upload" button on dashboard leads to 404.
+  2. `/api/upload` route missing → even if the page existed, the Excel upload pipeline is not wired. `src/lib/excel/parser.ts` is orphaned.
+  3. `.env.local` has placeholders → must set real Supabase + Groq credentials in Vercel dashboard before deploy.
+- **PDF spec deviation: ⚠️ ACCEPTABLE** — `@react-pdf/renderer` (pure JS) is used instead of `reportlab` (Python). This is the correct call for Vercel — Vercel cannot spawn Python subprocesses from Next.js routes. All substantive PDF spec requirements (A4, margins, header/footer, bookmarks, 7 sections, charts, ≤10MB) are met. Three deployment options exist:
+  - **Option A (CURRENT — RECOMMENDED)**: Stay on Vercel with `@react-pdf/renderer`. Works today, no extra infra, spec deviation is cosmetic.
+  - **Option B**: Deploy Next.js on Vercel + separate Python microservice on Railway/Render for reportlab-based PDFs. More moving parts, requires inter-service auth, but satisfies the literal `reportlab` requirement.
+  - **Option C**: Deploy entire app on Railway/Render/Fly (supports both Node.js + Python in one container). Restores `reportlab` but loses Vercel's edge network + preview deploys + zero-config Next.js integration.
+- **Recommendations (priority order)**:
+  1. **Before Vercel deploy**: Replace placeholder env vars in Vercel dashboard with real Supabase + Groq keys.
+  2. **Before user-facing launch**: Either build the missing `/upload` page + `/api/upload` route (re-using the orphaned `src/lib/excel/parser.ts`), OR remove the upload CTAs from `dashboard/page.tsx` and the `/upload` entry from `middleware.ts` `PROTECTED_PREFIXES`, and remove the phantom `/api/upload` entry from `vercel.json`.
+  3. **Cleanup (optional)**: Add `.vercelignore` for `fonts/simhei.ttf` (9.4MB), `scripts/report/`, `download/`, `tool-results/` — shrinks deployment, speeds builds. Delete `src/lib/env.ts` (dead) and the stray `DATABASE_URL` line in `.env`. Update `README.md` "Build Progress" checklist to mark Steps 3-8 as `[x]`.
+  4. **If on Vercel Hobby plan**: Monitor `/api/generate-report` for 504 timeouts. Consider pre-calling `/api/ai-insights` from the client and passing the result to a lighter PDF-only route, OR upgrading to Pro for 300s `maxDuration`.
