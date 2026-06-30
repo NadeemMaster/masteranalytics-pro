@@ -2,7 +2,7 @@
 
 // ============================================================================
 //  MasterAnalytics Pro — Dashboard Charts (Recharts)
-//  1) Day-by-Day Progress — Bar chart (OPV, missed, refusals across Days 1-4)
+//  1) Day-by-Day Progress — Composed bar chart (6 toggleable metrics, Days 1-4)
 //  2) UC-wise Comparison — Horizontal bar chart (coverage % per UC)
 //  3) Coverage vs Target — Composed/area chart (target vs OPV per UC)
 //
@@ -11,7 +11,7 @@
 //  Author: M. Nadeem Akhtar (https://www.facebook.com/itxmasterjee)
 // ============================================================================
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -75,27 +75,72 @@ function formatTooltipValue(value: number | string): string {
 }
 
 // ---------------------------------------------------------------------------
-//  1) Day-by-Day Progress
+//  1) Day-by-Day Progress (6 metrics with toggle chips)
 // ---------------------------------------------------------------------------
+
+type DayMetricKey =
+  | "target"
+  | "adminCoverage"
+  | "naRecorded"
+  | "naCoveredSameDay"
+  | "refusalsRecorded"
+  | "refusalsCovered";
+
+interface DayMetricConfig {
+  key: DayMetricKey;
+  label: string;
+  color: string;
+}
+
+const DAY_METRICS: DayMetricConfig[] = [
+  { key: "target", label: "Overall Target", color: "#94a3b8" }, // slate-400
+  { key: "adminCoverage", label: "Admin Coverage", color: CHART.c1 }, // blue
+  { key: "naRecorded", label: "NA Recorded", color: CHART.c3 }, // orange
+  { key: "naCoveredSameDay", label: "NA Covered Same Day", color: CHART.c2 }, // green
+  { key: "refusalsRecorded", label: "Refusals Recorded", color: CHART.c5 }, // pink
+  { key: "refusalsCovered", label: "Refusals Covered (proxy)", color: CHART.c4 }, // purple
+];
 
 interface DayByDayChartProps {
   data: DayBreakdownRow[];
 }
 
 export function DayByDayChart({ data }: DayByDayChartProps) {
+  const [visibleMetrics, setVisibleMetrics] = useState<DayMetricKey[]>(
+    DAY_METRICS.map((m) => m.key)
+  );
+
+  const toggleMetric = (key: DayMetricKey) => {
+    setVisibleMetrics((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    );
+  };
+
   const chartData = useMemo(
     () =>
       data.map((d) => ({
         day: `Day ${d.day}`,
-        opv: d.opv,
-        missed: d.missed,
-        refusals: d.refusals,
         target: d.target,
+        adminCoverage: d.adminCoverage,
+        naRecorded: d.naRecorded,
+        naCoveredSameDay: d.naCoveredSameDay,
+        refusalsRecorded: d.refusalsRecorded,
+        refusalsCovered: d.refusalsCovered,
       })),
     [data]
   );
 
-  const isEmpty = data.every((d) => d.opv === 0 && d.missed === 0 && d.refusals === 0);
+  const isEmpty = data.every(
+    (d) =>
+      d.target === 0 &&
+      d.adminCoverage === 0 &&
+      d.naRecorded === 0 &&
+      d.naCoveredSameDay === 0 &&
+      d.refusalsRecorded === 0 &&
+      d.refusalsCovered === 0
+  );
+
+  const activeMetrics = DAY_METRICS.filter((m) => visibleMetrics.includes(m.key));
 
   return (
     <Card className="h-full">
@@ -104,10 +149,35 @@ export function DayByDayChart({ data }: DayByDayChartProps) {
           <div>
             <CardTitle className="text-base">Day-by-Day Progress</CardTitle>
             <CardDescription>
-              OPV issued, missed children &amp; refusals across campaign days
+              Target, coverage & refusals across campaign days — toggle metrics below
             </CardDescription>
           </div>
-          <Badge variant="info">4 days</Badge>
+          <Badge variant="info">{data.length} days</Badge>
+        </div>
+        {/* Toggle chips */}
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {DAY_METRICS.map((m) => {
+            const active = visibleMetrics.includes(m.key);
+            return (
+              <button
+                key={m.key}
+                type="button"
+                onClick={() => toggleMetric(m.key)}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                  active
+                    ? "border-transparent text-white"
+                    : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                }`}
+                style={active ? { backgroundColor: m.color } : undefined}
+              >
+                <span
+                  className="h-2 w-2 rounded-full"
+                  style={{ backgroundColor: active ? "rgba(255,255,255,0.9)" : m.color }}
+                />
+                {m.label}
+              </button>
+            );
+          })}
         </div>
       </CardHeader>
       <CardContent>
@@ -117,7 +187,7 @@ export function DayByDayChart({ data }: DayByDayChartProps) {
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={320}>
-            <BarChart
+            <ComposedChart
               data={chartData}
               margin={{ top: 10, right: 12, left: 0, bottom: 4 }}
             >
@@ -140,10 +210,16 @@ export function DayByDayChart({ data }: DayByDayChartProps) {
                 cursor={{ fill: "rgba(148,163,184,0.08)" }}
               />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="opv" name="OPV Issued" fill={CHART.c1} radius={[4, 4, 0, 0]} />
-              <Bar dataKey="missed" name="Missed" fill={CHART.c3} radius={[4, 4, 0, 0]} />
-              <Bar dataKey="refusals" name="Refusals" fill={CHART.c5} radius={[4, 4, 0, 0]} />
-            </BarChart>
+              {activeMetrics.map((m) => (
+                <Bar
+                  key={m.key}
+                  dataKey={m.key}
+                  name={m.label}
+                  fill={m.color}
+                  radius={[4, 4, 0, 0]}
+                />
+              ))}
+            </ComposedChart>
           </ResponsiveContainer>
         )}
       </CardContent>

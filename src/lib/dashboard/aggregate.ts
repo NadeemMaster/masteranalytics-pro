@@ -41,9 +41,15 @@ export interface DashboardKpis {
 export interface DayBreakdownRow {
   day: number;
   opv: number;
-  missed: number;
-  refusals: number;
-  target: number;
+  target: number; // over_all_target
+  adminCoverage: number; // admin_coverage (count)
+  naRecorded: number; // missed_na_0_59
+  naCoveredSameDay: number; // missed_covered_na
+  refusalsRecorded: number; // total_refusal
+  refusalsCovered: number; // missed_covered_ref (proxy)
+  // Legacy fields kept for backward compat with existing chart code:
+  missed: number; // alias for naRecorded
+  refusals: number; // alias for refusalsRecorded
 }
 
 export interface UcBreakdownRow {
@@ -53,9 +59,14 @@ export interface UcBreakdownRow {
   adminCoverage: number;
   target: number;
   coveragePct: number; // 0-100 (admin coverage against target)
-  missed: number;
-  refusals: number;
+  naRecorded: number; // missed_na_0_59
+  naCoveredSameDay: number; // missed_covered_na
+  refusalsRecorded: number; // total_refusal
+  refusalsCovered: number; // missed_covered_ref (proxy)
   day: number;
+  // Legacy fields:
+  missed: number; // alias for naRecorded
+  refusals: number; // alias for refusalsRecorded
 }
 
 export interface DashboardRow {
@@ -96,6 +107,8 @@ interface DailyRow {
   opv_issued: number;
   admin_coverage: number;
   missed_na_0_59: number;
+  missed_covered_na: number; // NA covered same day
+  missed_covered_ref: number; // Refusals covered (proxy)
   total_refusal: number;
   teams_reported: number;
 }
@@ -116,7 +129,7 @@ interface CatchupRow {
 // ---------------------------------------------------------------------------
 
 const DAILY_COLUMNS =
-  "campaign_name, tehsil, uc_name, campaign_day, over_all_target, opv_issued, admin_coverage, missed_na_0_59, total_refusal, teams_reported";
+  "campaign_name, tehsil, uc_name, campaign_day, over_all_target, opv_issued, admin_coverage, missed_na_0_59, missed_covered_na, missed_covered_ref, total_refusal, teams_reported";
 
 const CATCHUP_COLUMNS =
   "campaign_name, tehsil, uc_name, campaign_day, opv_issued, total_coverage, still_missed, total_refusal";
@@ -288,23 +301,43 @@ export async function fetchDashboardData(
   // ---- Day-by-day breakdown ----
   const dayMap = new Map<number, DayBreakdownRow>();
   for (let d = 1; d <= 4; d++) {
-    dayMap.set(d, { day: d, opv: 0, missed: 0, refusals: 0, target: 0 });
+    dayMap.set(d, {
+      day: d,
+      opv: 0,
+      target: 0,
+      adminCoverage: 0,
+      naRecorded: 0,
+      naCoveredSameDay: 0,
+      refusalsRecorded: 0,
+      refusalsCovered: 0,
+      missed: 0,
+      refusals: 0,
+    });
   }
 
   for (const r of dailyRows) {
     const entry = dayMap.get(r.campaign_day);
     if (!entry) continue;
     entry.opv += r.opv_issued ?? 0;
-    entry.missed += r.missed_na_0_59 ?? 0;
-    entry.refusals += r.total_refusal ?? 0;
     entry.target += r.over_all_target ?? 0;
+    entry.adminCoverage += r.admin_coverage ?? 0;
+    entry.naRecorded += r.missed_na_0_59 ?? 0;
+    entry.naCoveredSameDay += r.missed_covered_na ?? 0;
+    entry.refusalsRecorded += r.total_refusal ?? 0;
+    entry.refusalsCovered += r.missed_covered_ref ?? 0;
+    // Legacy aliases
+    entry.missed = entry.naRecorded;
+    entry.refusals = entry.refusalsRecorded;
   }
   for (const r of catchupRows) {
     const entry = dayMap.get(4);
     if (!entry) continue;
     entry.opv += r.opv_issued ?? 0;
-    entry.missed += r.still_missed ?? 0;
-    entry.refusals += r.total_refusal ?? 0;
+    entry.naRecorded += r.still_missed ?? 0;
+    entry.refusalsRecorded += r.total_refusal ?? 0;
+    // Legacy aliases
+    entry.missed = entry.naRecorded;
+    entry.refusals = entry.refusalsRecorded;
   }
 
   const dayBreakdown = Array.from(dayMap.values());
@@ -324,17 +357,26 @@ export async function fetchDashboardData(
         adminCoverage: 0,
         target: 0,
         coveragePct: 0,
+        naRecorded: 0,
+        naCoveredSameDay: 0,
+        refusalsRecorded: 0,
+        refusalsCovered: 0,
+        day: r.campaign_day,
         missed: 0,
         refusals: 0,
-        day: r.campaign_day,
       };
       ucMap.set(k, entry);
     }
     entry.opv += r.opv_issued ?? 0;
     entry.adminCoverage += r.admin_coverage ?? 0;
     entry.target += r.over_all_target ?? 0;
-    entry.missed += r.missed_na_0_59 ?? 0;
-    entry.refusals += r.total_refusal ?? 0;
+    entry.naRecorded += r.missed_na_0_59 ?? 0;
+    entry.naCoveredSameDay += r.missed_covered_na ?? 0;
+    entry.refusalsRecorded += r.total_refusal ?? 0;
+    entry.refusalsCovered += r.missed_covered_ref ?? 0;
+    // Legacy aliases
+    entry.missed = entry.naRecorded;
+    entry.refusals = entry.refusalsRecorded;
     if (r.campaign_day > entry.day) entry.day = r.campaign_day;
   }
   for (const r of catchupRows) {
@@ -348,15 +390,22 @@ export async function fetchDashboardData(
         adminCoverage: 0,
         target: 0,
         coveragePct: 0,
+        naRecorded: 0,
+        naCoveredSameDay: 0,
+        refusalsRecorded: 0,
+        refusalsCovered: 0,
+        day: 4,
         missed: 0,
         refusals: 0,
-        day: 4,
       };
       ucMap.set(k, entry);
     }
     entry.opv += r.opv_issued ?? 0;
-    entry.missed += r.still_missed ?? 0;
-    entry.refusals += r.total_refusal ?? 0;
+    entry.naRecorded += r.still_missed ?? 0;
+    entry.refusalsRecorded += r.total_refusal ?? 0;
+    // Legacy aliases
+    entry.missed = entry.naRecorded;
+    entry.refusals = entry.refusalsRecorded;
     entry.day = 4; // catchup overrides latest day
   }
 

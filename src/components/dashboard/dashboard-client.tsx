@@ -26,6 +26,7 @@ import {
   DayByDayChart,
   UcCoverageChart,
 } from "@/components/dashboard/charts";
+import { UcPerformanceMatrix } from "@/components/dashboard/uc-performance-matrix";
 import { CampaignComparison } from "@/components/dashboard/campaign-comparison";
 import { AiInsightsCard } from "@/components/dashboard/ai-insights";
 import { PdfReportButton } from "@/components/dashboard/pdf-report-button";
@@ -172,6 +173,13 @@ export function DashboardClient({
         <ChartsSkeleton />
       ) : (
         <CoverageVsTargetChart data={data.ucBreakdown} limit={10} />
+      )}
+
+      {/* UC Performance Matrix — all 6 metrics per UC (color-coded, sortable, filterable) */}
+      {pending ? (
+        <ChartsSkeleton />
+      ) : (
+        <UcPerformanceMatrix data={data.ucBreakdown} />
       )}
 
       {/* AI Insights (Groq LLaMA-3) + PDF Export */}
